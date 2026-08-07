@@ -80,3 +80,4 @@ add_subdirectory("fftlib")
 include_directories(${PROJECT_SOURCE_DIR}/fftlib)
 
 add_subdirectory("tools")
+add_subdirectory("fmdemod")

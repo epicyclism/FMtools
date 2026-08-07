@@ -1,38 +1,47 @@
-// FMDemod.cpp : Defines the entry point for the console application.
+// FMDemod.cpp
 //
 
-#include "stdafx.h"
+#include <vector>
+#include <charconv>	
+#include <cmath>
+#include <complex>
+#include <algorithm>
+#include <functional>
 
-#include "MediaProcessor.h"
-#include "MemMapFile.h"
+#include <fmt/format.h>
+
+#include "mm_file.h"
+#include "wav_file.h"
 #include "FMDemodFunctions.h"
 
 typedef double F ;
 
+template <typename T> void from_chars(char const* arg, T& result)
+{
+	auto [ptr, ec] = std::from_chars(arg, arg + strlen(arg), result);
+}
+
 void Welcome ()
 {
-	CERR << TEXT("FMDemod 1.11 Copyright Paul Ranson (c) 2009-2016\n") ;
-	CERR << TEXT("email - paul2718@gmail.com\n\n") ;
-	CERR << TEXT("(sizeof F is ") << sizeof ( F ) << TEXT(")\n\n") ;
+	fmt::println("FMDemod 2.00 Copyright Paul Ranson (c) 2009-2026") ;
+	fmt::println("email - paul@epicyclism.com\n") ;
 }
 
 void Usage ()
 {
-	CERR << TEXT("Usage : fmdemod [<-L>|<-R>|<-M>|<-I>] [-F<xxxx>] [-C] [-B] [-N<0|1>] <inputwav> <outputdat> [rpm]\n") ;
-	CERR << TEXT("Options : -L, use left. -R, use right. -M, convert to mono.\n") ;
-	CERR << TEXT("          -I, if stereo input assume ready made IQ pair.\n") ;
-	CERR << TEXT("          (These are all ignored if the input is mono...)\n") ;
-	CERR << TEXT("          -Fxxx, apply a narrow band filter centered on xxxxHz.\n\n") ;
-	CERR << TEXT("          -C, copy the loaded data to the output, no demodulation.\n") ;
-	CERR << TEXT("          -B[nnnn], input file is treated as a raw array of F at (if given) sample rate nnnn.\n") ;
-	CERR << TEXT("          (If also -I then raw array will be treated as stereo IQ pairing)\n") ;
-	CERR << TEXT("          -N, -N1, normalize centering on 0 and filter the result. Default behaviour.\n") ;
-	CERR << TEXT("          -N2,     normalize centering on 0 DO NOT low pass filter the result.\n") ;
-	CERR << TEXT("          -N0, do not normalize, do not filter. Will probably mess up a polar plot...\n") ;
-	CERR << TEXT("If an rpm is supplied then data will also be written to stdout\n0.0 gets you the raw data, anything else sets up for polar plotting\n") ;
-	CERR << TEXT("Use 33 for 33 1/3...\n\n") ;
-	CERR << TEXT("For example: fmdemod -M -F3150 LP12.wav LP12.dat 33 > LP12Polar.dat\n\n") ;
-	CERR << TEXT("(sizeof F is ") << sizeof ( F ) << TEXT(")\n\n") ;
+	fmt::println("Usage : fmdemod [<-L>|<-R>|<-M>|<-I>] [-F<xxxx>] [-C] [-B] [-N<0|1>] <inputwav> <outputdat> [rpm]") ;
+	fmt::println("Options : -L, use left. -R, use right. -M, convert to mono.") ;
+	fmt::println("          (These are all ignored if the input is mono...)") ;
+	fmt::println("          -Fxxx, apply a narrow band filter centered on xxxxHz.") ;
+	fmt::println("          -C, copy the loaded data to the output, no demodulation.") ;
+	fmt::println("          -B[nnnn], input file is treated as a raw array of F at (if given) sample rate nnnn.") ;
+	fmt::println("          (If also -I then raw array will be treated as stereo IQ pairing)") ;
+	fmt::println("          -N, -N1, normalize centering on 0 and filter the result. Default behaviour.") ;
+	fmt::println("          -N2,     normalize centering on 0 DO NOT low pass filter the result.") ;
+	fmt::println("          -N0, do not normalize, do not filter. Will probably mess up a polar plot...") ;
+	fmt::println("If an rpm is supplied then data will also be written to stdout\n0.0 gets you the raw data, anything else sets up for polar plotting\n") ;
+	fmt::println("Use 33 for 33 1/3...\n") ;
+	fmt::println("For example: fmdemod -M -F3150 LP12.wav LP12.dat 33 > LP12Polar.dat\n\n") ;
 }
 
 template <typename T> F Mean ( T begin, T end )
@@ -95,6 +104,7 @@ template <typename T> F Mean2 ( T begin, T end )
 	return F( mean ) ;
 }
 
+#if 0
 template<typename T> void DumpRange ( T b, T e )
 {
 	size_t m = 0 ;
@@ -124,8 +134,9 @@ template <typename R> void PrintReal ( R r )
 {
 	COUT << r << std::endl ;
 }
+#endif
 
-int _tmain(int argc, _TCHAR* argv[])
+int main(int argc, char* argv[])
 {
 	Welcome () ;
 
@@ -145,60 +156,55 @@ int _tmain(int argc, _TCHAR* argv[])
 	bool    bNormalize  = true ;
 	bool	bFilterDemod = true ;
 	bool	bBare        = false ; // assume wav
-	bool    bIQ		 = false ; // assume full demod
 	size_t sample_rate   = 96000 ;
 	int		arg  = 1 ;
 	while ( arg < argc )
 	{
-		if ( argv [ arg ][ 0 ] == TEXT ('-') || argv [ arg ][ 0 ] == TEXT('/'))
+		if ( argv [ arg ][ 0 ] == '-' || argv [ arg ][ 0 ] == '/')
 		{
 			switch ( argv [ arg ][ 1 ])
 			{
-			case TEXT('B') :
-			case TEXT('b') :
+			case 'B' :
+			case 'b' :
 				bBare = true ;
-				sample_rate = ::_tstoi ( argv [ arg ] + 2 ) ;
+				from_chars(argv[arg] + 2, sample_rate);
 				if ( sample_rate == 0 )
 					sample_rate = 96000 ;
 				break ;
-			case TEXT('C') :
-			case TEXT('c') :
+			case 'C' :
+			case 'c' :
 				bDemodulate = false ;
 				break ;
-			case TEXT('F') :
-			case TEXT('f') :
-				nFilterFreq = ::_tstoi ( argv [ arg ] + 2 ) ;
+			case 'F' :
+			case 'f' :
+				from_chars(argv[arg] + 2, nFilterFreq);
 				break ;
-			case TEXT('I') :
-			case TEXT('i') :
-				bIQ = true ;
-				break ;
-			case TEXT('L') :
-			case TEXT('l') :
+			case 'L' :
+			case 'l' :
 				nInputProcFlags = 1 ;
 				break ;
-			case TEXT('M') :
-			case TEXT('m') :
+			case 'M' :
+			case 'm' :
 				nInputProcFlags = 0 ;
 				break ;
-			case TEXT('N') :
-			case TEXT('n') :
+			case 'N' :
+			case 'n' :
 				switch ( argv [ arg ][ 2 ])
 				{
-				case TEXT('0') :
+				case '0' :
 					bNormalize = false; 
 					break ;
-				case TEXT('2') :
+				case '2' :
 					bFilterDemod = false ;
 					break ;
 				}
 				break ;
-			case TEXT('R') :
-			case TEXT('r') :
+			case 'R' :
+			case 'r' :
 				nInputProcFlags = 2 ;
 				break ;
 			default :
-				CERR << TEXT("Unknown argument \'") << argv [ arg ][ 1 ] << TEXT("\'!\n") ;
+				fmt::println("Unknown argument \'{}\'!", argv [ arg ][ 1 ]) ;
 				Usage () ;
 				return -1 ;
 			}
@@ -209,117 +215,83 @@ int _tmain(int argc, _TCHAR* argv[])
 		{
 			if ( arg > nOutFileArg )
 			{
-				rpm = F( ::_tstof ( argv [ arg ])) ;
+				from_chars(argv[arg], rpm)
 			}
 		}
 		++arg ;
 	}
 	if ( bIQ && !bDemodulate )
 	{
-		CERR << TEXT("Incompatible arguments '-I' and '-C'.\n") ;
+		fmt::println("Incompatible arguments '-I' and '-C'.") ;
 		return -1 ;
 	}
 	// inout buffer.
 	//
 	std::vector<F> inoutbuf ;
 	// IQ buffer
-	std::vector<std::complex<F> > iqbuf ;
+	std::vector<std::complex<F> > iqbuf;
 
 	if ( bBare )
 	{
 		// bare file!
 		// assume mono unless 'IQ' is set.
-		MemoryMappedFile<F> mmf ( argv [ nInFileArg ]) ;
+		mem_map_file<F> mmf ( argv [ nInFileArg ]) ;
 		if ( !mmf )
 		{
-			CERR << TEXT("Couldn't open <") << argv [ nInFileArg ] << TEXT(">\n") ;
-
+			fmt::println("Couldn't open <{}>", argv [ nInFileArg ]) ;
 			return -1 ;
 		}
-		if ( bIQ )
-		{
-			iqbuf.resize ( mmf.Length () / (sizeof ( F ) * 2 )) ;
-			F const* pF = mmf.Ptr () ;
-			std::for_each ( iqbuf.begin (), iqbuf.end (), [&pF]( std::complex<F>& vt )
-			{
-				vt = std::complex<F>( *(pF + 1), *pF ) ;
-				pF += 2 ;
-			}) ;
-			CERR << "Read " << iqbuf.size () << " sample pairs from bare input file. Sample rate is " << sample_rate << ".\n" ;
-			// make space for later
-			inoutbuf.resize ( iqbuf.size ()) ;
-		}
-		else
-		{
-			// sometime refactor to work directly on the memory buffer 
-			inoutbuf.resize ( mmf.Length () / sizeof ( F )) ;
-			std::copy ( mmf.First (), mmf.Last (), inoutbuf.begin ()) ;
+		// sometime refactor to work directly on the memory buffer 
+		inoutbuf.resize ( mmf.length () / sizeof ( F )) ;		
+		std::copy ( mmf.begin (), mmf.end (), inoutbuf.begin ()) ;
 
-			CERR << "Read " << inoutbuf.size () << " samples from bare input file. Sample rate is " << sample_rate << ".\n" ;
-		}
+		fmt::println("Read {} samples from bare input file. Sample rate is {}.", inoutbuf.size (), sample_rate) ;
 	}
 	else
 	{
 		// wav file!
-		MediaProcessor mp ;
-		try
+		Wav_File mp(argv[nInFileArg]);
+		if(!mp.mmf.())
 		{
-			mp.Open ( argv [ nInFileArg ]) ;
-			if ( bIQ )
-			{
-				mp.ReadComplex ( iqbuf ) ;
-				// report
-				CERR << TEXT("Read ") << iqbuf.size () << TEXT(" sample pairs from input file. Sample rate is ") << mp.SampleRate () << TEXT(".\n") ;
-				// make space for later
-				inoutbuf.resize ( iqbuf.size ()) ;
-			}
-			else
-			{
-				mp.Read ( inoutbuf, nInputProcFlags ) ;
-				// report
-				CERR << TEXT("Read ") << inoutbuf.size () << TEXT(" samples from input file. Sample rate is ") << mp.SampleRate () << TEXT(".\n") ;
-			}
+			fmt::println("Failed to open WAV file <{}>", argv[nInFileArg]);
+			return -1;
 		}
-		catch (std::exception& ex )
+		inoutbuf.reserve(mp.total_samples());
+		if (nInputProcFlags == 0)
 		{
-			std::cerr << "Failed to handle media file <" ;
-			std::wcerr << argv [ nInFileArg ] ;
-			std::cerr << ">\n" ;
-			std::cerr << ex.what () << "\n\n" ;
+			// convert to mono
+			do
+			{
+				auto [p, c] = mp.get_chunk(mp.wav_header.sampleRate * 60); // read 60 seconds
+				inoutbuf.append_range(p, p + c);
+			} while (!mp.eof());
+		}
+		else
+		{
+			int channel = (nInputProcFlags == 1) ? 0 : 1;
+			do
+			{
+				auto [p, c] = mp.get_chunk(mp.wav_header.sampleRate * 60, channel); // read 60 seconds
+				inoutbuf.append_range(p, p + c);
+			} while (!mp.eof());
+		}
+		fmt::println("Read {} samples from input file. Sample rate is {}.", inoutbuf.size (), mp.sa ()) ;
 
-			return -1 ;
-		}
-		sample_rate = mp.SampleRate () ;
+		sample_rate = mp.sample_rate () ;
 	}
 	
-	// filter?
-	if ( bIQ )
-	{
-		if ( nFilterFreq > 0 )
-			DoBandFilter     ( &iqbuf [ 0 ], iqbuf.size (), nFilterFreq, sample_rate ) ;
-	}
-	else
-	{
 #if 0
-		if ( nFilterFreq > 5000 ) // not wow and flutter
-			DoLowPassFilter ( &inoutbuf [ 0 ], inoutbuf.size (), nFilterFreq * 7 / 4, sample_rate ) ;
-		else
+	if ( nFilterFreq > 5000 ) // not wow and flutter
+		DoLowPassFilter ( &inoutbuf [ 0 ], inoutbuf.size (), nFilterFreq * 7 / 4, sample_rate ) ;
+	else
 #endif
-		if ( nFilterFreq > 0 )
-			DoBandFilter     ( &inoutbuf [ 0 ], inoutbuf.size (), nFilterFreq, sample_rate ) ;
-	}
+	if ( nFilterFreq > 0 )
+		DoBandFilter     ( &inoutbuf [ 0 ], inoutbuf.size (), nFilterFreq, sample_rate ) ;
 	if ( bDemodulate )
 	{
-		if ( bIQ )
-		{
-			EqualiseIQ ( &iqbuf[0], iqbuf.size ()) ;
-		}
-		else
-		{
-			iqbuf.resize ( inoutbuf.size ()) ;
-			GenerateIQ ( &inoutbuf [ 0 ], &iqbuf [ 0 ], iqbuf.size (), sample_rate ) ;
-			EqualiseIQ ( &iqbuf[0], iqbuf.size ()) ;
-		}
+		iqbuf.resize ( inoutbuf.size ()) ;
+		GenerateIQ ( &inoutbuf [ 0 ], &iqbuf [ 0 ], iqbuf.size (), sample_rate ) ;
+		EqualiseIQ ( &iqbuf[0], iqbuf.size ()) ;
 		// IQ derivative buffer
 		std::vector<std::complex<F> > iqdiffbuf ;
 		iqdiffbuf.resize ( inoutbuf.size ()) ;
