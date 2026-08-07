@@ -1,0 +1,16 @@
+﻿cmake_minimum_required (VERSION 3.30)
+
+add_executable(sig_gen SigGen.cpp)
+target_link_libraries(sig_gen PRIVATE fmt::fmt)
+
+add_executable(dsp_test DSPTest.cpp)
+target_link_libraries(dsp_test PRIVATE fmt::fmt fftlib)
+
+add_executable(FFTit fftit.cpp)
+target_link_libraries(FFTit PRIVATE fmt::fmt fftlib)
+
+add_executable(fmgenerate FMGenerate.cpp)
+target_link_libraries(fmgenerate PRIVATE fmt::fmt)
+
+add_executable(jitter_gen JitterGen.cpp jtestfns.h)
+target_link_libraries(jitter_gen PRIVATE fmt::fmt)
