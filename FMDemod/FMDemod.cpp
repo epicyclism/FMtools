@@ -9,8 +9,10 @@
 #include <functional>
 
 #include <fmt/format.h>
+#include <fmt/ostream.h>
 
 #include "mm_file.h"
+#include "basic_file.h"
 #include "wav_file.h"
 #include "FMDemodFunctions.h"
 
@@ -23,25 +25,25 @@ template <typename T> void from_chars(char const* arg, T& result)
 
 void Welcome ()
 {
-	fmt::println("FMDemod 2.00 Copyright Paul Ranson (c) 2009-2026") ;
-	fmt::println("email - paul@epicyclism.com\n") ;
+	fmt::println(std::cerr, "FMDemod 2.00 Copyright Paul Ranson (c) 2009-2026") ;
+	fmt::println(std::cerr, "email - paul@epicyclism.com\n") ;
 }
 
 void Usage ()
 {
-	fmt::println("Usage : fmdemod [<-L>|<-R>|<-M>|<-I>] [-F<xxxx>] [-C] [-B] [-N<0|1>] <inputwav> <outputdat> [rpm]") ;
-	fmt::println("Options : -L, use left. -R, use right. -M, convert to mono.") ;
-	fmt::println("          (These are all ignored if the input is mono...)") ;
-	fmt::println("          -Fxxx, apply a narrow band filter centered on xxxxHz.") ;
-	fmt::println("          -C, copy the loaded data to the output, no demodulation.") ;
-	fmt::println("          -B[nnnn], input file is treated as a raw array of F at (if given) sample rate nnnn.") ;
-	fmt::println("          (If also -I then raw array will be treated as stereo IQ pairing)") ;
-	fmt::println("          -N, -N1, normalize centering on 0 and filter the result. Default behaviour.") ;
-	fmt::println("          -N2,     normalize centering on 0 DO NOT low pass filter the result.") ;
-	fmt::println("          -N0, do not normalize, do not filter. Will probably mess up a polar plot...") ;
-	fmt::println("If an rpm is supplied then data will also be written to stdout\n0.0 gets you the raw data, anything else sets up for polar plotting\n") ;
-	fmt::println("Use 33 for 33 1/3...\n") ;
-	fmt::println("For example: fmdemod -M -F3150 LP12.wav LP12.dat 33 > LP12Polar.dat\n\n") ;
+	fmt::println(std::cerr, "Usage : fmdemod [<-L>|<-R>|<-M>|<-I>] [-F<xxxx>] [-C] [-B] [-N<0|1>] <inputwav> <outputdat> [rpm]") ;
+	fmt::println(std::cerr, "Options : -L, use left. -R, use right. -M, convert to mono.") ;
+	fmt::println(std::cerr, "          (These are all ignored if the input is mono...)") ;
+	fmt::println(std::cerr, "          -Fxxx, apply a narrow band filter centered on xxxxHz.") ;
+	fmt::println(std::cerr, "          -C, copy the loaded data to the output, no demodulation.") ;
+	fmt::println(std::cerr, "          -B[nnnn], input file is treated as a raw array of F at (if given) sample rate nnnn.") ;
+	fmt::println(std::cerr, "          (If also -I then raw array will be treated as stereo IQ pairing)") ;
+	fmt::println(std::cerr, "          -N, -N1, normalize centering on 0 and filter the result. Default behaviour.") ;
+	fmt::println(std::cerr, "          -N2,     normalize centering on 0 DO NOT low pass filter the result.") ;
+	fmt::println(std::cerr, "          -N0, do not normalize, do not filter. Will probably mess up a polar plot...") ;
+	fmt::println(std::cerr, "If an rpm is supplied then data will also be written to stdout\n0.0 gets you the raw data, anything else sets up for polar plotting\n") ;
+	fmt::println(std::cerr, "Use 33 for 33 1/3...\n") ;
+	fmt::println(std::cerr, "For example: fmdemod -M -F3150 LP12.wav LP12.dat 33 > LP12Polar.dat\n\n") ;
 }
 
 template <typename T> F Mean ( T begin, T end )
@@ -204,7 +206,7 @@ int main(int argc, char* argv[])
 				nInputProcFlags = 2 ;
 				break ;
 			default :
-				fmt::println("Unknown argument \'{}\'!", argv [ arg ][ 1 ]) ;
+				fmt::println(std::cerr, "Unknown argument \'{}\'!", argv [ arg ][ 1 ]) ;
 				Usage () ;
 				return -1 ;
 			}
@@ -233,14 +235,14 @@ int main(int argc, char* argv[])
 		mem_map_file<F> mmf ( argv [ nInFileArg ]) ;
 		if ( !mmf )
 		{
-			fmt::println("Couldn't open <{}>", argv [ nInFileArg ]) ;
+			fmt::println(std::cerr, "Couldn't open <{}>", argv [ nInFileArg ]) ;
 			return -1 ;
 		}
 		// sometime refactor to work directly on the memory buffer 
 		inoutbuf.resize ( mmf.length () / sizeof ( F )) ;		
 		std::copy ( mmf.begin (), mmf.end (), inoutbuf.begin ()) ;
 
-		fmt::println("Read {} samples from bare input file. Sample rate is {}.", inoutbuf.size (), sample_rate) ;
+		fmt::println(std::cerr, "Read {} samples from bare input file. Sample rate is {}.", inoutbuf.size (), sample_rate) ;
 	}
 	else
 	{
@@ -248,7 +250,7 @@ int main(int argc, char* argv[])
 		Wav_File mp(argv[nInFileArg]);
 		if(!mp.mmf)
 		{
-			fmt::println("Failed to open WAV file <{}>", argv[nInFileArg]);
+			fmt::println(std::cerr, "Failed to open WAV file <{}>", argv[nInFileArg]);
 			return -1;
 		}
 		inoutbuf.reserve(mp.total_samples());
@@ -270,7 +272,7 @@ int main(int argc, char* argv[])
 				inoutbuf.insert(inoutbuf.end(), p, p + c);
 			} while (!mp.eof());
 		}
-		fmt::println("Read {} samples from input file. Sample rate is {}.", inoutbuf.size (), mp.sample_rate ()) ;
+		fmt::println(std::cerr, "Read {} samples from input file. Sample rate is {}.", inoutbuf.size (), mp.sample_rate ()) ;
 
 		sample_rate = mp.sample_rate () ;
 	}
@@ -297,7 +299,7 @@ int main(int argc, char* argv[])
 
 		if ( inoutbuf.size () < 1536 + 2048 + 1024 + 2048 )
 		{
-			fmt::println("Insufficient data demodulated!" );
+			fmt::println(std::cerr, "Insufficient data demodulated!" );
 			return -1 ;
 		}
 		// trim off the end to account for unprocessed points at the end of filter operations
@@ -386,9 +388,9 @@ int main(int argc, char* argv[])
 					if ((*it) < min )
 						min = *it ;
 					if ( bTT )
-						std::cout << angle << " " << (*it) * 50.0 + 1.0 << "\n" ;
+						fmt::println("{} {}", angle, (*it) * 50.0 + 1.0);
 					else
-						std::cout << angle << " " << (*it) * 500.0 + 1.0 << "\n" ;
+						fmt::println("{} {}", angle, (*it) * 500.0 + 1.0);
 					cnt = 0 ;
 				}
 #endif
@@ -400,7 +402,7 @@ int main(int argc, char* argv[])
 				++it ;
 			}
 #if 1
-		fmt::println("Min = {}, max = {}, range = {}.", min, max, max - min);
+		fmt::println(std::cerr, "Min = {}, max = {}, range = {}.", min, max, max - min);
 #endif
 		}
 
@@ -417,16 +419,15 @@ int main(int argc, char* argv[])
 		while ( it != itE )
 		{
 			if ( n == 0 )
-				fmt::print("{:10.6f}", *it) ;
+				fmt::println("{:10.6f}", *it) ;
 			++n;
 			if (n == 10)
 				n = 0;
 			++it ;
 		}
 	}
-	BasicFile<GENERIC_WRITE, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL> ofdemodphase ( argv [ nOutFileArg ]) ;
-	ofdemodphase.WriteFile ( &inoutbuf[0], DWORD(inoutbuf.size () * sizeof ( F ))) ;
+	log_file_t ofdemodphase ( argv [ nOutFileArg ]) ;
+	ofdemodphase.write ( inoutbuf.data(), inoutbuf.size() * sizeof(F));
 
 	return 0;
 }
-
