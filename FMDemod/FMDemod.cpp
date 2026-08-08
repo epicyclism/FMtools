@@ -215,15 +215,10 @@ int main(int argc, char* argv[])
 		{
 			if ( arg > nOutFileArg )
 			{
-				from_chars(argv[arg], rpm)
+				from_chars(argv[arg], rpm);
 			}
 		}
 		++arg ;
-	}
-	if ( bIQ && !bDemodulate )
-	{
-		fmt::println("Incompatible arguments '-I' and '-C'.") ;
-		return -1 ;
 	}
 	// inout buffer.
 	//
@@ -251,7 +246,7 @@ int main(int argc, char* argv[])
 	{
 		// wav file!
 		Wav_File mp(argv[nInFileArg]);
-		if(!mp.mmf.())
+		if(!mp.mmf)
 		{
 			fmt::println("Failed to open WAV file <{}>", argv[nInFileArg]);
 			return -1;
@@ -263,7 +258,7 @@ int main(int argc, char* argv[])
 			do
 			{
 				auto [p, c] = mp.get_chunk(mp.wav_header.sampleRate * 60); // read 60 seconds
-				inoutbuf.append_range(p, p + c);
+				inoutbuf.insert(inoutbuf.end(), p, p + c);
 			} while (!mp.eof());
 		}
 		else
@@ -272,10 +267,10 @@ int main(int argc, char* argv[])
 			do
 			{
 				auto [p, c] = mp.get_chunk(mp.wav_header.sampleRate * 60, channel); // read 60 seconds
-				inoutbuf.append_range(p, p + c);
+				inoutbuf.insert(inoutbuf.end(), p, p + c);
 			} while (!mp.eof());
 		}
-		fmt::println("Read {} samples from input file. Sample rate is {}.", inoutbuf.size (), mp.sa ()) ;
+		fmt::println("Read {} samples from input file. Sample rate is {}.", inoutbuf.size (), mp.sample_rate ()) ;
 
 		sample_rate = mp.sample_rate () ;
 	}
@@ -302,7 +297,7 @@ int main(int argc, char* argv[])
 
 		if ( inoutbuf.size () < 1536 + 2048 + 1024 + 2048 )
 		{
-			std::wcerr << L"Insufficient data demodulated!\n" ;
+			fmt::println("Insufficient data demodulated!" );
 			return -1 ;
 		}
 		// trim off the end to account for unprocessed points at the end of filter operations
@@ -324,20 +319,24 @@ int main(int argc, char* argv[])
 			auto itmax = std::max_element ( inoutbuf.begin () + 3, inoutbuf.end ()) ;
 #endif
 			F ave = Mean2 ( inoutbuf.begin (), inoutbuf.end ()) ;
+#if 0
 			std::wcerr << L"DC removal : min = " << *itmin << L" at offset "
 				<< std::distance ( inoutbuf.begin (), itmin ) << L", max = " << *itmax << L" at offset " 
 				<< std::distance ( inoutbuf.begin (), itmax ) << L", av = " << ave << std::endl ;
-			std::transform ( inoutbuf.begin (), inoutbuf.end (), inoutbuf.begin (), std::bind2nd ( std::minus<F>(), ave )) ;
+#endif
+			std::transform ( inoutbuf.begin (), inoutbuf.end (), inoutbuf.begin (), [=](auto v){ return v - ave;}) ;
 //			std::replace ( inoutbuf.begin (), inoutbuf.end (), 0.0, 1.0 ) ;
 			ave = Mean2 ( inoutbuf.begin (), inoutbuf.end ()) ;
+#if 0
 			CERR << TEXT("Post normal av = ") << ave << TEXT("\n") ;
+#endif
 		}
 		else
 		{
 			F fs = F ( sample_rate ) ;
 			std::for_each ( inoutbuf.begin (), inoutbuf.end (), [fs]( F& rf )
 			{
-				rf = fs * rf / PI<F>::TwoPi ();
+				rf = fs * rf / TWO_PI;
 			}) ;
 		}
 		// optional polar output
@@ -349,11 +348,11 @@ int main(int argc, char* argv[])
 			if ( rpm == 33.0 )
 				rpm = F(100.0 / 3.0) ; // correct to 33 1/3
 			F fs = F ( sample_rate ) ;
-			F angle_inc = PI<F>::TwoPi () * (rpm / 60.0) / fs ;
+			F angle_inc = TWO_PI * (rpm / 60.0) / fs ;
 			F angle = 0.0 ;
 			F av = 0.0 ;
 			F min = 1.0, max = 1.0 ;
-			size_t steps = size_t((PI<F>::TwoPi () / 3600.0) / angle_inc ) ;
+			size_t steps = size_t((TWO_PI / 3600.0) / angle_inc ) ;
 			size_t cnt = 0 ;
 //			size_t orbits = 1 ;
 			// try and start 5 revs in?
@@ -394,14 +393,14 @@ int main(int argc, char* argv[])
 				}
 #endif
 				angle += angle_inc ;
-				F lim = bTT ? (5.0 * PI<F>::TwoPi ()) : (50.0 * PI<F>::TwoPi ()) ;
+				F lim = bTT ? (5.0 * TWO_PI) : (50.0 * TWO_PI) ;
 				if ( angle > lim )
 					break ; // 5 or 100 revs...
 				++cnt ;
 				++it ;
 			}
 #if 1
-			std::wcerr << L"Min = " << min << L", max = " << max << L", range = " << max - min << L".\n" ;
+		fmt::println("Min = {}, max = {}, range = {}.", min, max, max - min);
 #endif
 		}
 
@@ -418,7 +417,7 @@ int main(int argc, char* argv[])
 		while ( it != itE )
 		{
 			if ( n == 0 )
-				std::cout << *it << "\n" ;	
+				fmt::print("{:10.6f}", *it) ;
 			++n;
 			if (n == 10)
 				n = 0;
