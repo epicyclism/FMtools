@@ -73,7 +73,9 @@ endif()
 
 find_package(Boost 1.89 REQUIRED COMPONENTS system math)
 find_package(fmt CONFIG REQUIRED)
+find_package(FFMPEG REQUIRED)
 
+add_subdirectory("common")
 include_directories(${PROJECT_SOURCE_DIR}/common)
 
 add_subdirectory("fftlib")
