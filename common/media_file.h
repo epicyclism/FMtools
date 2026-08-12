@@ -31,29 +31,22 @@ using mediaFileException = exceptionError<int>;
 
 class Media_File {
 public:
-
-	int resampleRate = -1;
-
 	/*
 	relFPath				Relative path to media file
-	offsetIntoDataMS		Starting offset into audio file in milliseconds
-	defaultBufferSizeMS		Min size to attempt to read from data, read out big chunk (default 10s) and chunk that out when requested until empty
-							Not guaranteed to be exact
 	*/
-	Media_File(const char* relFPath, uint32_t offsetIntoDataMS_ = 0, uint32_t endPointInDataMS_ = UINT32_MAX, int resampleRate_ = 16000, int defaultBufferLoadMS_ = 30000);
+//	Media_File(const char* relFPath, uint32_t offsetIntoDataMS_ = 0, uint32_t endPointInDataMS_ = UINT32_MAX, int resampleRate_ = 16000, int defaultBufferLoadMS_ = 30000);
+	Media_File(const char* relFPath);
 
 	~Media_File();
 
 	int64_t estimated_duration_ms() const;
+	int		get_sample_rate() const { return pCodecContext->sample_rate; }
 	std::pair<float const*, int> get_chunk(int numMS, bool includeSamples = true);
 
 	bool eof();
 
 	int fNum = 0;
 private:
-
-	uint32_t offsetIntoDataMS = -1;
-	uint32_t endPointInDataMS = UINT32_MAX;
 	int defaultBufferLoadMS = -1;
 
 	uint32_t numSamplesWanted = UINT32_MAX;

@@ -231,7 +231,7 @@ int main(int argc, char* argv[])
 	if ( bBare )
 	{
 		// bare file!
-		// assume mono unless 'IQ' is set.
+		// assume mono
 		mem_map_file<F> mmf ( argv [ nInFileArg ]) ;
 		if ( !mmf )
 		{

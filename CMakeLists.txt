@@ -44,6 +44,12 @@ FetchContent_Declare( ctre
 FetchContent_MakeAvailable(ctre)
 endif()
 
+FetchContent_Declare( miniaudio 
+    GIT_REPOSITORY https://github.com/mackron/miniaudio
+    GIT_TAG origin/master
+    )
+FetchContent_MakeAvailable(miniaudio)
+
 if(FALSE)
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows" OR ${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
     message(STATUS "Fetching hello_imgui")

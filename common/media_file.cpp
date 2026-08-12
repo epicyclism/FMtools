@@ -1,19 +1,17 @@
 
 #include "media_file.h"
 
+#if 0
 Media_File::Media_File(const char* relFPath, uint32_t offsetIntoDataMS_, uint32_t endPointInDataMS_, int resampleRate_, int defaultBufferLoadMS_)
     :offsetIntoDataMS(offsetIntoDataMS_),
     endPointInDataMS(endPointInDataMS_),
     resampleRate(resampleRate_),
     defaultBufferLoadMS(defaultBufferLoadMS_)
+#endif
+Media_File::Media_File(const char* relFPath)
 {
     if(pFormatContext) // already open
         throw mediaFileException(2, "MEDIAFILE STRUCTURE ALREADY INITIALIZED");
-
-    if (this->offsetIntoDataMS > this->endPointInDataMS) {
-        std::string err = ("Attempting to start after chosen end of file: (in = " + std::to_string(this->offsetIntoDataMS) + "ms, out = " + std::to_string(this->endPointInDataMS) + "ms)\n");
-        throw mediaFileException(1, err.c_str());
-    }
 
 	//Create context
 	this->pFormatContext = avformat_alloc_context();
@@ -105,8 +103,8 @@ Media_File::Media_File(const char* relFPath, uint32_t offsetIntoDataMS_, uint32_
     av_opt_set_chlayout(swr, "ichl", &src, NULL);                                      // Set input channel layout to correct layout(?)
     AVChannelLayout dst = AV_CHANNEL_LAYOUT_MONO;
     av_opt_set_chlayout(swr, "ochl", &dst, NULL);                                      // Set output channel layout to correct layout(?)
-    av_opt_set_int(swr, "in_sample_rate", pCodecContext->sample_rate, NULL);                                             // Set input sample rate
-    av_opt_set_int(swr, "out_sample_rate", this->resampleRate, NULL);                                                    // Resample audio to 16kHz
+    av_opt_set_int(swr, "in_sample_rate", pCodecContext->sample_rate, NULL);
+    av_opt_set_int(swr, "out_sample_rate", pCodecContext->sample_rate, NULL);
     av_opt_set_sample_fmt(swr, "in_sample_fmt", pCodecContext->sample_fmt, NULL);                                        // Set input sample format
     av_opt_set_sample_fmt(swr, "out_sample_fmt", AV_SAMPLE_FMT_FLT, NULL);                                               // Set output sample format to 32-bit floating point (float)
 
@@ -128,23 +126,9 @@ Media_File::Media_File(const char* relFPath, uint32_t offsetIntoDataMS_, uint32_
 
     //std::cout << "1: TSC: " << this->totalSamplesConverted << "  NSW: " << this->numSamplesWanted << '\n';
 
-    if (offsetIntoDataMS) {
-        auto _ = this->get_chunk(offsetIntoDataMS, false);
-    }
-
     //std::cout << "2: TSC: " << this->totalSamplesConverted << "  NSW: " << this->numSamplesWanted << '\n';
 
-    if (endPointInDataMS != UINT32_MAX) {
-        this->numSamplesWanted = ((this->endPointInDataMS - this->offsetIntoDataMS) / 1000) * this->resampleRate;
-    }
-
-    if (this->eof()) {
-        std::string err = "Offset into audio file after end of file (in = " + std::to_string(this->offsetIntoDataMS) + ")\n";
-        throw mediaFileException(2, err.c_str());
-    }
-
     //std::cout << "3: TSC: " << this->totalSamplesConverted << "  NSW: " << this->numSamplesWanted << '\n';
-
 }
 
 Media_File::~Media_File(){
@@ -171,7 +155,7 @@ std::pair<float const*, int> Media_File::get_chunk(int numMS, bool includeSample
 
 //    std::ofstream f("out.bin", std::ios::binary | std::ios::app);
     
-    int numSamples = this->resampleRate * (numMS / 1000.0);
+    int numSamples = pCodecContext->sample_rate * (numMS / 1000.0);
 
     // If sufficient samples have been extracted
     if (!this->extractedData.size() || numSamples > this->extractedData.size() - this->nextDataIdx) {
@@ -213,10 +197,10 @@ int64_t Media_File::estimated_duration_ms() const
 std::pair<float const*, int> Media_File::get_large_chunk(int numMS, bool includeSamples){
     //std::cout << "1.2: TSC: " << this->totalSamplesConverted << "  NSW: " << this->numSamplesWanted << '\n';
     this->largeChunk.clear();
-    int numSamples = this->resampleRate * (numMS / 1000.0);
+    int numSamples = pCodecContext->sample_rate * (numMS / 1000.0);
     int numLeft = numSamples;
     while (!this->eof() && this->largeChunk.size() < numSamples) {
-        auto smallChunkData = this->get_chunk(((numLeft > (this->defaultBufferLoadMS / 1000) * this->resampleRate) ? this->defaultBufferLoadMS : (numLeft * 1000/this->resampleRate)), includeSamples);
+        auto smallChunkData = this->get_chunk(((numLeft > (this->defaultBufferLoadMS / 1000) * pCodecContext->sample_rate) ? this->defaultBufferLoadMS : (numLeft * 1000/pCodecContext->sample_rate )), includeSamples);
         if (smallChunkData.second == 0)
             break;
         this->largeChunk.insert(this->largeChunk.end(), smallChunkData.first, smallChunkData.first + smallChunkData.second);
@@ -237,7 +221,7 @@ bool Media_File::eof(){
 
 void Media_File::fill_extracted_data(){
     if (!this->eof()) {
-        int numSamplesWanted = this->resampleRate * (this->defaultBufferLoadMS / 1000) - this->extractedData.size();
+        int numSamplesWanted = this->pCodecContext->sample_rate * (this->defaultBufferLoadMS / 1000) - this->extractedData.size();
         int numSamplesConverted = 0;
         //this->extractedData.clear();
         int readFrameRet = 0;
