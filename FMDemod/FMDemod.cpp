@@ -7,16 +7,15 @@
 #include <complex>
 #include <algorithm>
 #include <functional>
+#include <tuple>
 
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 
 #include "mm_file.h"
 #include "basic_file.h"
-#include "wav_file.h"
+#include "audio_file_reader.h"
 #include "FMDemodFunctions.h"
-
-typedef double F ;
 
 template <typename T> void from_chars(char const* arg, T& result)
 {
@@ -151,14 +150,14 @@ int main(int argc, char* argv[])
 
 	int		nInFileArg  = 1 ;
 	int		nOutFileArg = 2 ;
-	int		nInputProcFlags = 0 ; // 0 = make mono, 1 = left, 2 = right
+	uint32_t		nInputProcFlags = 0 ; // 0 = make mono, 1 = left, 2 = right
 	F    	rpm = -1 ;
 	int		nFilterFreq = 0 ;
 	bool    bDemodulate = true ;
 	bool    bNormalize  = true ;
 	bool	bFilterDemod = true ;
 	bool	bBare        = false ; // assume wav
-	size_t sample_rate   = 96000 ;
+	uint32_t sample_rate   = 96000 ;
 	int		arg  = 1 ;
 	while ( arg < argc )
 	{
@@ -246,6 +245,7 @@ int main(int argc, char* argv[])
 	}
 	else
 	{
+#if 0
 		// wav file!
 		Wav_File mp(argv[nInFileArg]);
 		if(!mp.mmf)
@@ -272,9 +272,12 @@ int main(int argc, char* argv[])
 				inoutbuf.insert(inoutbuf.end(), p, p + c);
 			} while (!mp.eof());
 		}
-		fmt::println(std::cerr, "Read {} samples from input file. Sample rate is {}.", inoutbuf.size (), mp.sample_rate ()) ;
 
 		sample_rate = mp.sample_rate () ;
+#else
+		std::tie(inoutbuf, sample_rate) = read_audio_file(argv[nInFileArg], nInputProcFlags);
+#endif
+		fmt::println(std::cerr, "Read {} samples from input file. Sample rate is {}.", inoutbuf.size (), sample_rate) ;
 	}
 	
 #if 0

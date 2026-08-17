@@ -10,8 +10,9 @@
 #include <utility>
 #include <string_view>
 #include <memory>
+#include "constants.h"
 
-using fp_t = double;
+using fp_t = F;
 
 struct IProcessorFFT
 {
@@ -20,7 +21,6 @@ public:
 	virtual std::pair<fp_t const*, fp_t const*> operator () (fp_t const* ib, fp_t const* ie) = 0;
 	virtual size_t width() = 0;
 };
-
 
 enum class window_t { NOWINDOW, HAMMING, BLACKMAN, BLACKMANHARRIS, KAISER5, KAISER7 };
 

@@ -6,8 +6,6 @@
 #include "fftlib.h"
 #include "constants.h"
 
-using F = fp_t;
-
 void usage ()
 {
 	fmt::println("DSPTest") ;

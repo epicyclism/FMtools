@@ -4,9 +4,8 @@
 #include <fmt/format.h>
 
 #include "basic_file.h"
+#include "constants.h"
 #include "FMDemodFunctions.h"
-
-typedef double F ;
 
 template <typename T> void from_chars(char const* arg, T& result)
 {
