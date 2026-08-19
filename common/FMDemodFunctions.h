@@ -441,18 +441,18 @@ template <typename F> void Differentiate ( F* in, F* out, size_t len )
 	*out = F( 0 ) ;
 }
 
-template <typename F> void Differentiate3 ( F* in, F* out, size_t len )
+template <typename T> void Differentiate3 ( T* in, T* out, size_t len )
 {
-	F* n__3 = in ;
-	F* n__1 = in + 2 ;
-	F* n_1  = in + 4 ;
-	F* n_3  = in + 6 ;
+	T* n__3 = in ;
+	T* n__1 = in + 2 ;
+	T* n_1  = in + 4 ;
+	T* n_3  = in + 6 ;
 
-	*out = F( 0 ) ;
+	*out = T( 0 ) ;
 	++out ;
-	*out = F( 0 ) ;
+	*out = T( 0 ) ;
 	++out ;
-	*out = F( 0 ) ;
+	*out = T( 0 ) ;
 	++out ;
 
 	for ( size_t c = 3; c < len - 2; ++c )
@@ -464,9 +464,39 @@ template <typename F> void Differentiate3 ( F* in, F* out, size_t len )
 		++n_1 ;
 		++out ;
 	}
-	*out = F( 0 ) ;
+	*out = T( 0 ) ;
 	++out ;
-	*out = F( 0 ) ;
+	*out = T( 0 ) ;
+}
+
+// real and imag separate, but still complex output, represents IQ.
+//
+template <typename T> void Differentiate3(std::complex<T>* in, std::complex<T>* out, size_t len)
+{
+	std::complex<T>* n__3 = in;
+	std::complex<T>* n__1 = in + 2;
+	std::complex<T>* n_1  = in + 4;
+	std::complex<T>* n_3  = in + 6;
+
+	*out = std::complex<T>(T(0));
+	++out;
+	*out = std::complex<T>(T(0));
+	++out;
+	*out = std::complex<T>(T(0));
+	++out;
+
+	for (size_t c = 3; c < len - 2; ++c)
+	{
+		*out = std::complex<T>(((*n__3).real() - (*n_3).real()) / 16.0 + (*n_1).real() - (*n__1).real(), ((*n__3).imag() - (*n_3).imag()) / 16.0 + (*n_1).imag() - (*n__1).imag());
+		++n__3;
+		++n__1;
+		++n_3;
+		++n_1;
+		++out;
+	}
+	*out = std::complex<T>(T(0));
+	++out;
+	*out = std::complex<T>(T(0));
 }
 
 // look at the real and imaginary series, compute gain and offset to normalise them as a pair.

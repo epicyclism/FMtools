@@ -13,14 +13,12 @@ void monoize(std::vector<F>& buf)
         return;
     auto i0 = buf.begin();
     auto i1 = i0;
-    auto i2 = i1 + 1;
     auto ie = buf.end();
-    while (i2 != ie)
+    while (i1 != ie)
     {
-        *i0 = (*i1 + *i2) / TWO;
+        *i0 = *i1 + *(i1 + 1) / TWO;
         ++i0;
         i1 += 2;
-        i2 += 2;
     }
     buf.resize(buf.size() / 2);
 }
@@ -31,7 +29,7 @@ void keep_left(std::vector<F>& buf)
         return;
     auto i0 = buf.begin();
     auto i1 = i0;
-    auto ie = buf.end() - 1;
+    auto ie = buf.end();
     while (i1 != ie)
     {
         *i0 = *i1;
@@ -47,13 +45,14 @@ void keep_right(std::vector<F>& buf)
         return;
     auto i0 = buf.begin();
     auto i2 = i0 + 1;
-	auto ie = buf.end();
-    while (i2 != ie)
+	auto ie = buf.end() - 1;
+    do
     {
         *i0 = *i2;
         ++i0;
         i2 += 2;
     }
+    while (i2 != ie);
     buf.resize(buf.size() / 2);
 }
 

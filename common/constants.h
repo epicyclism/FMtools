@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2022 Paul Ranson, paul@epicyclism.com
+// Copyright (c) 2008-2026 Paul Ranson, paul@epicyclism.com
 //
 // Refer to licence in repository.
 //
