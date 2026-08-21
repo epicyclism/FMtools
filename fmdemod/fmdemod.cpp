@@ -7,16 +7,15 @@
 #include <complex>
 #include <algorithm>
 #include <functional>
+#include <tuple>
 
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 
 #include "mm_file.h"
 #include "basic_file.h"
-#include "media_file.h"
+#include "audio_file_reader.h"
 #include "FMDemodFunctions.h"
-
-typedef double F ;
 
 template <typename T> void from_chars(char const* arg, T& result)
 {
@@ -31,13 +30,12 @@ void Welcome ()
 
 void Usage ()
 {
-	fmt::println(std::cerr, "Usage : fmdemod [<-L>|<-R>|<-M>|<-I>] [-F<xxxx>] [-C] [-B] [-N<0|1>] <inputwav> <outputdat> [rpm]") ;
+	fmt::println(std::cerr, "Usage : fmdemod [<-L>|<-R>|<-M>] [-F<xxxx>] [-C] [-B] [-N<0|1>] <inputwav> <outputdat> [rpm]") ;
 	fmt::println(std::cerr, "Options : -L, use left. -R, use right. -M, convert to mono.") ;
 	fmt::println(std::cerr, "          (These are all ignored if the input is mono...)") ;
 	fmt::println(std::cerr, "          -Fxxx, apply a narrow band filter centered on xxxxHz.") ;
 	fmt::println(std::cerr, "          -C, copy the loaded data to the output, no demodulation.") ;
 	fmt::println(std::cerr, "          -B[nnnn], input file is treated as a raw array of F at (if given) sample rate nnnn.") ;
-	fmt::println(std::cerr, "          (If also -I then raw array will be treated as stereo IQ pairing)") ;
 	fmt::println(std::cerr, "          -N, -N1, normalize centering on 0 and filter the result. Default behaviour.") ;
 	fmt::println(std::cerr, "          -N2,     normalize centering on 0 DO NOT low pass filter the result.") ;
 	fmt::println(std::cerr, "          -N0, do not normalize, do not filter. Will probably mess up a polar plot...") ;
@@ -151,14 +149,14 @@ int main(int argc, char* argv[])
 
 	int		nInFileArg  = 1 ;
 	int		nOutFileArg = 2 ;
-	int		nInputProcFlags = 0 ; // 0 = make mono, 1 = left, 2 = right
+	uint32_t		nInputProcFlags = 0 ; // 0 = make mono, 1 = left, 2 = right
 	F    	rpm = -1 ;
 	int		nFilterFreq = 0 ;
 	bool    bDemodulate = true ;
 	bool    bNormalize  = true ;
 	bool	bFilterDemod = true ;
 	bool	bBare        = false ; // assume wav
-	size_t sample_rate   = 96000 ;
+	uint32_t sample_rate   = 96000 ;
 	int		arg  = 1 ;
 	while ( arg < argc )
 	{
@@ -231,7 +229,7 @@ int main(int argc, char* argv[])
 	if ( bBare )
 	{
 		// bare file!
-		// assume mono unless 'IQ' is set.
+		// assume mono
 		mem_map_file<F> mmf ( argv [ nInFileArg ]) ;
 		if ( !mmf )
 		{
@@ -246,6 +244,7 @@ int main(int argc, char* argv[])
 	}
 	else
 	{
+#if 0
 		// wav file!
 		Wav_File mp(argv[nInFileArg]);
 		if(!mp.mmf)
@@ -272,9 +271,17 @@ int main(int argc, char* argv[])
 				inoutbuf.insert(inoutbuf.end(), p, p + c);
 			} while (!mp.eof());
 		}
-		fmt::println(std::cerr, "Read {} samples from input file. Sample rate is {}.", inoutbuf.size (), mp.sample_rate ()) ;
 
 		sample_rate = mp.sample_rate () ;
+#else
+		std::tie(inoutbuf, sample_rate) = read_audio_file(argv[nInFileArg], nInputProcFlags);
+		if (inoutbuf.empty())
+		{
+			fmt::println(std::cerr, "Failed to read audio file <{}>, error code {}", argv[nInFileArg], sample_rate);
+			return -1;
+		}
+#endif
+		fmt::println(std::cerr, "Read {} samples from input file. Sample rate is {}.", inoutbuf.size (), sample_rate) ;
 	}
 	
 #if 0
@@ -283,19 +290,19 @@ int main(int argc, char* argv[])
 	else
 #endif
 	if ( nFilterFreq > 0 )
-		DoBandFilter     ( &inoutbuf [ 0 ], inoutbuf.size (), nFilterFreq, sample_rate ) ;
+		DoBandFilter     ( inoutbuf.data(), inoutbuf.size(), nFilterFreq, sample_rate);
 	if ( bDemodulate )
 	{
 		iqbuf.resize ( inoutbuf.size ()) ;
-		GenerateIQ ( &inoutbuf [ 0 ], &iqbuf [ 0 ], iqbuf.size (), sample_rate ) ;
-		EqualiseIQ ( &iqbuf[0], iqbuf.size ()) ;
+		GenerateIQ ( inoutbuf.data(), iqbuf.data(), iqbuf.size(), sample_rate );
+		EqualiseIQ ( iqbuf.data(), iqbuf.size() );
 		// IQ derivative buffer
 		std::vector<std::complex<F> > iqdiffbuf ;
 		iqdiffbuf.resize ( inoutbuf.size ()) ;
-		Differentiate3 ( &iqbuf[0], &iqdiffbuf[0], iqdiffbuf.size ()) ;
+		Differentiate3 ( iqbuf.data(), iqdiffbuf.data(), iqdiffbuf.size());
 
 		// demodulate
-		DemodulateFinal ( &iqbuf[0], &iqdiffbuf[0], &inoutbuf[0], inoutbuf.size ()) ;
+		DemodulateFinal ( iqbuf.data(), iqdiffbuf.data(), inoutbuf.data(), inoutbuf.size () ) ;
 
 		if ( inoutbuf.size () < 1536 + 2048 + 1024 + 2048 )
 		{

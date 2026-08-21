@@ -63,9 +63,10 @@ std::pair<std::vector<F>, uint32_t> read_audio_file(const char* filename, uint32
 
     ma_decoder decoder;
     ma_result result;
-
+    ma_decoder_config cfg = ma_decoder_config_init_default();
+	cfg.format = ma_format_f32; // Request float output
     // Initialize decoder (auto-detect format from file extension)
-    result = ma_decoder_init_file(filename, NULL, &decoder);
+    result = ma_decoder_init_file(filename, &cfg, &decoder);
     if (result != MA_SUCCESS)
         return { buf, result };
 
