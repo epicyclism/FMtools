@@ -3,7 +3,9 @@
 //
 // Refer to licence in repository.
 //
+
 #include <iostream>
+#include <string_view>
 #include <cstdlib>
 #include <algorithm>
 #include <functional>
@@ -14,6 +16,37 @@
 
 #include "fftlib.h"
 #include "mm_file.h"
+#include "audio_file_reader.h"
+
+// if an audio file, read it, if a raw data file, map it.
+// return ptr/size pair
+//
+struct signal_wrap
+{
+	mem_map_file<fp_t> mmf_;
+	std::vector<fp_t> data_;
+
+	signal_wrap(const char* fn)
+	{
+		std::string_view  fns(fn);
+		if (fns.ends_with(".wav") || fns.ends_with(".WAV") || fns.ends_with(".flac") || fns.ends_with(".FLAC"))
+		{
+			auto [data, sample_rate] = read_audio_file(fn, 0);
+			data_ = std::move(data);
+		}
+		else
+		{
+			mmf_.open(fn);
+		}
+	}
+	std::pair<fp_t const*, size_t> get() const
+	{
+		if (mmf_)
+			return { mmf_.ptr(), mmf_.length() };
+		else
+			return { data_.data(), data_.size() };
+	}
+};
 
 template <typename T> void from_chars(char const* arg, T& result)
 {
@@ -117,13 +150,22 @@ int main(int argc, char* argv[])
 		usage();
 		return -1;
 	}
+#if 0
 	mem_map_file<fp_t> mmf(argv[nInFileArg]);
 	if (!mmf)
 	{
 		fmt::println(std::cerr, "Couldn't open <{}>", argv[nInFileArg]);
 		return -1;
 	}
-
+#else
+	signal_wrap sw(argv[nInFileArg]);
+	auto [ptr, len] = sw.get();
+	if(len == 0)
+	{
+		fmt::println(std::cerr, "Couldn't open <{}>", argv[nInFileArg]);
+		return -1;
+	}
+#endif
 	// an FFT implementation!
 	auto pfft = make_fft(fftWidth, wt);
 	std::vector<fp_t> mean(pfft->width());
@@ -133,20 +175,20 @@ int main(int argc, char* argv[])
 
 	if (bOnce)
 	{
-		if (mmf.length() < pfft->width())
+		if (len < pfft->width())
 		{
 			fmt::println(std::cerr, "Insufficient signal supplied for the specified FFT width");
 			return -1;
 		}
-		size_t offset = (mmf.length() - pfft->width()) / 2;
+		size_t offset = (len - pfft->width()) / 2;
 		// just a single effort
-		auto[ob, oe] = (*pfft) (mmf.ptr() + offset, mmf.ptr() + offset + pfft->width());
+		auto[ob, oe] = (*pfft) (ptr + offset, ptr + offset + pfft->width());
 		std::copy(ob, oe, mean.begin());
 	}
 	else
 	{
 		// 50% overlap
-		size_t nffts = mmf.length();
+		size_t nffts = len;
 		if (nffts >= pfft->width() * 3 / 2)
 		{
 			nffts /= (pfft->width() / 2);
@@ -163,7 +205,7 @@ int main(int argc, char* argv[])
 
 		for (size_t n = 0; n < nffts; ++n)
 		{
-			auto[ob, oe] = (*pfft) (mmf.ptr() + n * pfft->width() / 2, mmf.ptr() + n * pfft->width() / 2 + pfft->width());
+			auto[ob, oe] = (*pfft) (ptr + n * pfft->width() / 2, ptr + n * pfft->width() / 2 + pfft->width());
 			// add to average
 			std::transform(mean.begin(), mean.end(), ob, mean.begin(), std::plus<>());
 		}

@@ -36,13 +36,11 @@ set_property(GLOBAL PROPERTY CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-if(FALSE)
 FetchContent_Declare( ctre 
     GIT_REPOSITORY https://github.com/hanickadot/compile-time-regular-expressions
     GIT_TAG origin/main
     )
 FetchContent_MakeAvailable(ctre)
-endif()
 
 FetchContent_Declare( miniaudio 
     GIT_REPOSITORY https://github.com/mackron/miniaudio
