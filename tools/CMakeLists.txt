@@ -16,4 +16,4 @@ add_executable(jitter_gen JitterGen.cpp jtestfns.h)
 target_link_libraries(jitter_gen PRIVATE fmt::fmt)
 
 add_executable(thd thd.cpp)
-target_link_libraries(thd PRIVATE fmt::fmt common ctre)
+target_link_libraries(thd PRIVATE fmt::fmt fftlib common ctre)
