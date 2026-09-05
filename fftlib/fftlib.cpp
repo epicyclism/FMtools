@@ -84,38 +84,55 @@ std::unique_ptr<IProcessorFFT> make_fft(size_t width, window_t wt)
 	switch (width)
 	{
 	case  8:
+	case  256:
 		return std::unique_ptr<IProcessorFFT>( new ProcessorFFT<fp_t, 256>(wt));
 	case  9:
+	case 512:
 		return std::unique_ptr<IProcessorFFT>(new ProcessorFFT<fp_t, 512>(wt));
 	case 10:
+	case 1024:
 		return std::unique_ptr<IProcessorFFT>(new ProcessorFFT<fp_t, 1024>(wt));
 	case 11:
+	case 2048:
 		return std::unique_ptr<IProcessorFFT>(new ProcessorFFT<fp_t, 2048>(wt));
 	case 12:
+	case 4096:
 		return std::unique_ptr<IProcessorFFT>(new ProcessorFFT<fp_t, 4096>(wt));
 	case 13:
+	case 8192:
 		return std::unique_ptr<IProcessorFFT>(new ProcessorFFT<fp_t, 8192>(wt));
 	case 14:
+	case 16384:
 		return std::unique_ptr<IProcessorFFT>(new ProcessorFFT<fp_t, 16384>(wt));
 	case 15:
+	case 32768:
 		return std::unique_ptr<IProcessorFFT>(new ProcessorFFT<fp_t, 32768>(wt));
 	case 16:
+	case 65536:
 		return std::unique_ptr<IProcessorFFT>(new ProcessorFFT<fp_t, 65536>(wt));
 	case 17:
+	case 131072:
 		return std::unique_ptr<IProcessorFFT>(new ProcessorFFT<fp_t, 131072>(wt));
 	case 18:
+	case 262144:
 		return std::unique_ptr<IProcessorFFT>(new ProcessorFFT<fp_t, 262144>(wt));
 	case 19:
+	case 524288:
 		return std::unique_ptr<IProcessorFFT>(new ProcessorFFT<fp_t, 524288>(wt));
 	case 20:
+	case 1048576:
 		return std::unique_ptr<IProcessorFFT>(new ProcessorFFT<fp_t, 1048576>(wt));
 	case 21:
+	case 2097152:
 		return std::unique_ptr<IProcessorFFT>(new ProcessorFFT<fp_t, 2097152>(wt));
 	case 22:
+	case 4194304:
 		return std::unique_ptr<IProcessorFFT>(new ProcessorFFT<fp_t, 4194304>(wt));
 	case 23:
+	case 8388608:
 		return std::unique_ptr<IProcessorFFT>(new ProcessorFFT<fp_t, 8388608>(wt));
 	case 24:
+	case 16777216:
 		return std::unique_ptr<IProcessorFFT>(new ProcessorFFT<fp_t, 16777216>(wt));
 	}
 	return std::unique_ptr<IProcessorFFT>();

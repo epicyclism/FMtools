@@ -58,10 +58,32 @@ int main(int ac, char** av)
 		fmt::println(std::cerr, "Input file <{}> is too short, must be at least 2 seconds of data", av[1]);
 		return -1;
 	}
+	fmt::println("Audio length: {}", data.size());
+	fmt::println("Sample rate: {}", sample_rate);
+	fmt::println("FFT width: {}", clp2(sample_rate));
 	// use an fft width greater than the sample rate. we don't need super fine resolution, just enough to get the harmonics.
 	auto fft = make_fft(clp2(sample_rate), window_t::HAMMING);
 	size_t offset = (data.size() - fft->width()) / 2;
+	fmt::println("FFT width: {}", fft->width());
 	// just a single effort
 	auto [ob, oe] = (*fft) (data.data() + offset, data.data() + offset + fft->width());
+	double fbinc = double(sample_rate) / fft->width();
+	double fb = -fbinc / 2.0;
+	auto mxe = std::max_element(ob, ob + fft->width() / 2);
+	fmt::println("Max value: {:.6f} at {:.6f} Hz", *mxe, fbinc * std::distance(ob, mxe));
+	auto oee = ob + fft->width() / 2;
+	while (ob < oee)
+	{
+		if(fb > 999 && fb < 1005)
+			fmt::println("{:.6f} {:.6f}", fb, *ob);
+		if(fb > 1999 && fb < 2005)
+			fmt::println("{:.6f} {:.6f}", fb, *ob);
+		if(fb > 2999 && fb < 3009)
+			fmt::println("{:.6f} {:.6f}", fb, *ob);
+		if(fb > 3999 && fb < 4009)
+			fmt::println("{:.6f} {:.6f}", fb, *ob);
+		fb += fbinc;
+		++ob;
+	}
 	// compute the thd 
 }
