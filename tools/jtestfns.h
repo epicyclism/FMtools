@@ -254,11 +254,11 @@ void CreateJTestF(std::vector<F>& buf)
 			++state;
 			break;
 		case 2:
-			buf[s] =F((int32_t)0x40000000)/ 0x7fffffff;
+			buf[s] =F((int32_t)0x40000000)/0x7fffffff;
 			++state;
 			break;
 		case 3:
-			buf[s] = F((int32_t)0x40000000)/ 0x7fffffff;
+			buf[s] = F((int32_t)0x40000000)/0x7fffffff;
 			++cnt;
 			state = 0;
 			if (cnt == 24)
@@ -269,15 +269,15 @@ void CreateJTestF(std::vector<F>& buf)
 			break;
 		case 4:
 		case 5:
-			buf[s] = F((int32_t)0xbfffff00)/ 0x7fffffff;
+			buf[s] = F((int32_t)0xbfffff00)/0x7fffffff;
 			++state;
 			break;
 		case 6:
-			buf[s] = F((int32_t)0x3fffff00)/ 0x7fffffff;
+			buf[s] = F((int32_t)0x3fffff00)/0x7fffffff;
 			++state;
 			break;
 		case 7:
-			buf[s] = F((int32_t)0x3fffff00)/ 0x7fffffff;
+			buf[s] = F((int32_t)0x3fffff00)/0x7fffffff;
 			++cnt;
 			state = 4;
 			if (cnt == 24)
