@@ -55,7 +55,7 @@ template <typename T> void from_chars(char const* arg, T& result)
 
 void welcome()
 {
-	fmt::println(std::cerr,"FFTit 2.00\n");
+	fmt::println(std::cerr,"fftit 2.00\n");
 	fmt::println(std::cerr,"Performs FFT on a file of raw sample data");
 	fmt::println(std::cerr,"(sizeof fp type is {})", sizeof(fp_t));
 }
@@ -63,7 +63,7 @@ void welcome()
 void usage()
 {
 	fmt::println(std::cerr,"Performs FFTs on a file of raw sample data");
-	fmt::println(std::cerr,"Usage : FFTit [-Fn] [-D] [-1] [-Wn] <input file> [sample rate]");
+	fmt::println(std::cerr,"Usage : fftit [-Fn] [-D] [-1] [-Wn] <input file> [sample rate]");
 	fmt::println(std::cerr,"Where input file is a packed array of floats. Output is text to stdout.");
 	fmt::println(std::cerr,"Options. -Fn, use an FFT width of 2^n.");
 	fmt::println(std::cerr,"              n between 8 for 256 and 24 for 16777216.");
@@ -99,7 +99,11 @@ int main(int argc, char* argv[])
 	int		arg = 1;
 	while (arg < argc)
 	{
+#if defined(_MSC_VER)
 		if (argv[arg][0] == '-' || argv[arg][0] == '/')
+#else
+		if (argv[arg][0] == '-')
+#endif	
 		{
 			switch (argv[arg][1])
 			{

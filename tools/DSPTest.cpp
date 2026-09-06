@@ -8,7 +8,7 @@
 
 void usage ()
 {
-	fmt::println("DSPTest") ;
+	fmt::println("dsp_test") ;
 }
 
 void FFTTest ()

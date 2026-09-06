@@ -16,7 +16,7 @@ void usage ()
 {
 	fmt::println("Generates a tri-sine wave in a raw file.") ;
 	fmt::println("Usage -" ) ;
-	fmt::println("SigGen [-S] <frequency1> <frequency2> <frequency3> <sample rate> <duration> <outputfile>") ;
+	fmt::println("sig_gen [-S] <frequency1> <frequency2> <frequency3> <sample rate> <duration> <outputfile>") ;
 	fmt::println("produces a linear combination of three sine waves at the three frequencies.") ;
 	fmt::println("For these options duration is in seconds and the output is a packed array of F.") ;
 	fmt::println("(sizeof F is {})" , sizeof(F)) ;
@@ -36,7 +36,11 @@ int main(int argc, char* argv[])
 	size_t duration    = 0 ;
 	size_t an = 1 ;
 
+#if defined(_MSC_VER)
 	if ( argv [ 1 ][ 0 ] == '-' || argv [ 1 ][ 0 ] == '/')
+#else
+	if ( argv [ 1 ][ 0 ] == '-')
+#endif{
 	{
 		switch ( argv [ 1 ][ 1 ])
 		{

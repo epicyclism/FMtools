@@ -14,10 +14,10 @@ template <typename T> void from_chars(char const* arg, T& result)
 void usage ()
 {
 	fmt::print("Generates an FM raw PCM file");
-	fmt::print("Usage - FMGenerate <carrier frequency> <modulation frequency> <deviation> <sample rate> <duration> <outputfile>");
+	fmt::print("Usage - fmgenerate <carrier frequency> <modulation frequency> <deviation> <sample rate> <duration> <outputfile>");
 	fmt::print("Where duration is in seconds. Output is a packed array of F.");
 	fmt::print("(If modulation frequency or deviation are 0 then a pure sine is generated.)");
-	fmt::print("For example - FMGenerate 3150 4.5 1 96000 30 3150_4_5.raw");
+	fmt::print("For example - fmgenerate 3150 4.5 1 96000 30 3150_4_5.raw");
 }
 
 int main(int argc, char* argv[])

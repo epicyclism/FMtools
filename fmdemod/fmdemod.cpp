@@ -160,7 +160,11 @@ int main(int argc, char* argv[])
 	int		arg  = 1 ;
 	while ( arg < argc )
 	{
+#if defined(_MSC_VER)
 		if ( argv [ arg ][ 0 ] == '-' || argv [ arg ][ 0 ] == '/')
+#else
+		if ( argv [ arg ][ 0 ] == '-')
+#endif
 		{
 			switch ( argv [ arg ][ 1 ])
 			{

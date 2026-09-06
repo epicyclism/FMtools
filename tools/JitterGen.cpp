@@ -19,16 +19,16 @@ void usage ()
 {
 	fmt::println("Generates a jittered sine wave in a raw file.") ;
 	fmt::println("Usage -" ) ;
-	fmt::println("JitterGen [-S] <carrier frequency> <jitter frequency> <jitter depth> <sample rate> <duration> <outputfile>") ;
+	fmt::println("jitter_gen [-S] <carrier frequency> <jitter frequency> <jitter depth> <sample rate> <duration> <outputfile>") ;
 	fmt::println("produces sinusoidal jitter, depth is the desired height of the jitter sidebands in dbfs.") ;
-	fmt::println("JitterGen -R <carrier frequency> <max offset> <sample rate> <duration> <outputfile>") ;
+	fmt::println("jitter_gen -R <carrier frequency> <max offset> <sample rate> <duration> <outputfile>") ;
 	fmt::println("produces random jitter with a rectangular pdf and maximum offset is pico seconds.") ;
-	fmt::println("JitterGen -G <carrier frequency> <offset> <sample rate> <duration> <outputfile>") ;
+	fmt::println("jitter_gen -G <carrier frequency> <offset> <sample rate> <duration> <outputfile>") ;
 	fmt::println("produces random jitter with a Gaussian pdf and offset is std dev in pico seconds.") ;
-	fmt::println("JitterGen -I <frequency> <sample rate> <duration> <outputfile>") ;
+	fmt::println("jitter_gen -I <frequency> <sample rate> <duration> <outputfile>") ;
 	fmt::println("produces an IQ quadrature pair.") ;
 	fmt::println("For these options duration is in seconds and the output is a packed array of F.\n" ) ;
-	fmt::println("JitterGen -J[16|24|F] <sample rate> <duration> <outputfile>") ;
+	fmt::println("jitter_gen -J[16|24|F] <sample rate> <duration> <outputfile>") ;
 	fmt::println("Creates a JTest signal of 16 or 24 bits matched to the sample rate.") ;
 	fmt::println("JitterGen -Q[16|24|F] <sample rate> <duration> <outputfile>") ;
 	fmt::println("Creates a 1/4 fs square wave (Jtest without the wobble) of 16 or 24 bits.") ;
@@ -81,8 +81,58 @@ int main(int argc, char** argv)
 	enum JitterType { SINE, RANDOM, GAUSSIAN, JTEST, QTEST, QTEST_IQ, _1BIT, IQ  } ;
 	JitterType jt = SINE ;
 	size_t an = 1 ;
+#if defined(_MSC_VER)
 	if ( argv [ 1 ][ 0 ] == '-' || argv [ 1 ][ 0 ] == '/')
 	{
+		switch ( argv [ 1 ][ 1 ])
+		{
+		case 'S' :
+		case 's' :
+			jt = SINE ;
+			break ;
+		case 'R' :
+		case 'r' :
+			jt = RANDOM ;
+			break ;
+		case 'G' :
+		case 'g' :
+			jt = GAUSSIAN ;
+			break ;
+		case 'I' :
+		case 'i' :
+			jt = IQ ;
+			break ;
+		case 'J' :
+		case 'j' :
+			jt = JTEST ;
+			dt = DoDT(argv[1][2]);
+			break ;
+		case 'Q' :
+		case 'q' :
+			if ( argv [ 1 ][ 2 ] == 'I' || argv [ 1 ][ 2 ] == 'i')
+			{
+				jt = QTEST_IQ ;
+			}
+			else
+			{
+				jt = QTEST ;
+			}
+			dt = DoDT(argv[1][2]);
+			break ;
+		case '9' :
+			jt = _1BIT ;
+			dt = DoDT(argv[1][2]);
+			break ;
+		default :
+			usage () ;
+			return -1 ;
+		}
+		an = 2 ;
+	}
+#else
+	if ( argv [ 1 ][ 0 ] == '-')
+#endif
+		{
 		switch ( argv [ 1 ][ 1 ])
 		{
 		case 'S' :
