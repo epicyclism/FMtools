@@ -19,6 +19,7 @@ void usage ()
 	fmt::println("sig_gen [-S] <frequency1> <frequency2> <frequency3> <sample rate> <duration> <outputfile>") ;
 	fmt::println("produces a linear combination of three sine waves at the three frequencies.") ;
 	fmt::println("For these options duration is in seconds and the output is a packed array of F.") ;
+	fmt::println("The -S option scales the second and third frequencies to emulate harmonic distortion.") ;
 	fmt::println("(sizeof F is {})" , sizeof(F)) ;
 }
 
@@ -35,7 +36,7 @@ int main(int argc, char* argv[])
 	size_t sample_rate = 0 ;
 	size_t duration    = 0 ;
 	size_t an = 1 ;
-
+	bool scale = false;
 #if defined(_MSC_VER)
 	if ( argv [ 1 ][ 0 ] == '-' || argv [ 1 ][ 0 ] == '/')
 #else
@@ -46,6 +47,7 @@ int main(int argc, char* argv[])
 		{
 		case 'S' :
 		case 's' :
+			scale = true;
 			break ;
 		default :
 			usage () ;
@@ -72,7 +74,10 @@ int main(int argc, char* argv[])
 	buf.resize ( sample_rate * duration ) ;
 
 	// generate
-	FillBufferWithTriSine(f1, f2, f3, &buf[0], buf.size(), sample_rate);
+	if(scale)
+		FillBufferWithTriSine(f1, f2, f3, &buf[0], buf.size(), sample_rate);
+	else
+		FillBufferWithTriSineFactor(f1, f2, f3, &buf[0], buf.size(), sample_rate, F(0.5), F(0.01));
 
 	// write
 	of.write ( &buf[0], buf.size () * sizeof ( F )) ;

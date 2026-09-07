@@ -360,6 +360,23 @@ template <typename F> void FillBufferWithTriSine(F f1, F f2, F f3, F* buf, size_
 	}
 }
 
+// three sine waves simultaneously!
+// but scaled by factor
+//
+template <typename F> void FillBufferWithTriSineFactor(F f1, F f2, F f3, F* buf, size_t len, size_t sample_rate, F amplitude = F(0.5), F factor = F(0.01))
+{
+	AngleGenerator<F> ag1(f1, sample_rate);
+	AngleGenerator<F> ag2(f2, sample_rate);
+	AngleGenerator<F> ag3(f3, sample_rate);
+	auto factor2 = amplitude * factor;
+	auto factor3 = factor2 * factor2;
+	for (size_t c = 0; c < len; ++c)
+	{
+		*buf = (amplitude * sin(ag1())) + factor2 * sin(ag2() + TWO_PI / F(4)) + factor3 * (sin(ag3())) / F(3);
+		++buf;
+	}
+}
+
 template <typename F> void DoBandFilter ( F* in, size_t len, size_t centre_freq, size_t sample_rate )
 {
 //	BandPassFilter<2047, 40, F> bp ( centre_freq, sample_rate ) ;
