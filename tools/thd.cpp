@@ -39,6 +39,7 @@ void usage()
 }
 
 constexpr size_t nbuckets = 48000;
+constexpr size_t FFT_SZ = 32768;
 
 int main(int ac, char** av)
 {
@@ -60,30 +61,47 @@ int main(int ac, char** av)
 	}
 	fmt::println("Audio length: {}", data.size());
 	fmt::println("Sample rate: {}", sample_rate);
-	fmt::println("FFT width: {}", clp2(sample_rate));
 	// use an fft width greater than the sample rate. we don't need super fine resolution, just enough to get the harmonics.
-	auto fft = make_fft(clp2(sample_rate), window_t::HAMMING);
-	size_t offset = (data.size() - fft->width()) / 2;
+	auto fft = make_fft(clp2(sample_rate), window_t::BLACKMANHARRIS);
+//	auto fft = make_fft(FFT_SZ, window_t::HAMMING);
 	fmt::println("FFT width: {}", fft->width());
+#if 1
+	int tm = 0;
+	size_t offset = 0;
+	while (offset + fft->width() < data.size())
+	{
+		auto [ob, oe] = (*fft) (data.data() + offset, data.data() + offset + fft->width());
+		// estimate the second harmonic by looking for the max value in the first half of the FFT output, then looking for the max value in the second half of the FFT output.
+		auto mx1 = std::max_element(ob, ob + fft->width() / 4);
+		auto mx2 = std::max_element(ob + 2 * std::distance(ob, mx1) - 10, ob + fft->width() / 2);
+//		fmt::println("{} {:.6f} {:.6f} {:.6f}", tm, 100.0 * *mx2 / *mx1, *mx1, *mx2);
+		fmt::println("{} {:.6f}", tm, 100.0 * *mx2 / *mx1);
+		offset += sample_rate;
+		++tm;
+	}
+#else
+	size_t offset = (data.size() - fft->width()) / 2;
 	// just a single effort
 	auto [ob, oe] = (*fft) (data.data() + offset, data.data() + offset + fft->width());
 	double fbinc = double(sample_rate) / fft->width();
-	double fb = -fbinc / 2.0;
+//	double fb = -fbinc / 2.0;
+	double fb = 0.0;
 	auto mxe = std::max_element(ob, ob + fft->width() / 2);
 	fmt::println("Max value: {:.6f} at {:.6f} Hz", *mxe, fbinc * std::distance(ob, mxe));
 	auto oee = ob + fft->width() / 2;
 	while (ob < oee)
 	{
-		if(fb > 999 && fb < 1005)
+		if(fb > 998 && fb < 1003)
 			fmt::println("{:.6f} {:.6f}", fb, *ob);
-		if(fb > 1999 && fb < 2005)
+		if(fb > 1998 && fb < 2003)
 			fmt::println("{:.6f} {:.6f}", fb, *ob);
-		if(fb > 2999 && fb < 3009)
+		if(fb > 2998 && fb < 3003)
 			fmt::println("{:.6f} {:.6f}", fb, *ob);
-		if(fb > 3999 && fb < 4009)
+		if(fb > 3998 && fb < 4003)
 			fmt::println("{:.6f} {:.6f}", fb, *ob);
 		fb += fbinc;
 		++ob;
 	}
 	// compute the thd 
+#endif
 }
