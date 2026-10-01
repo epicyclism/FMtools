@@ -99,31 +99,40 @@ int main(int ac, char** av)
 //	double fb = -fbinc / 2.0;
 	double fb = 0.0;
 	auto mxe = std::max_element(ob, ob + fft->width() / 2);
-	auto fundamental = std::distance(ob, mxe) * fbinc;
+	const auto bin = std::distance(ob, mxe);
+	const auto fundamental = bin * fbinc;
+#if 0
 	fmt::println("Max value: {:.6f} at {:.6f} Hz", *mxe, fundamental);
 	auto oee = ob + fft->width() / 2;
-	while (ob < oee)
+	auto obb = ob;
+	while (obb < oee)
 	{
 		if(fb > 998 && fb < 1003)
-			fmt::println("{:.6f} {:.6f}", fb, *ob);
+			fmt::println("{:.6f} {:.6f}", fb, *obb);
 		if(fb > 1998 && fb < 2003)
 			fmt::println("{:.6f} {:.6f}", fb, *ob);
 		if(fb > 2998 && fb < 3003)
-			fmt::println("{:.6f} {:.6f}", fb, *ob);
+			fmt::println("{:.6f} {:.6f}", fb, *obb);
 		if(fb > 3998 && fb < 4003)
-			fmt::println("{:.6f} {:.6f}", fb, *ob);
+			fmt::println("{:.6f} {:.6f}", fb, *obb);
 		fb += fbinc;
-		++ob;
+		++obb;
 	}
+#endif
 	// compute the thd 
 	int num_harmonics = (sample_rate / 2) / fundamental;
-	size_t bin = size_t(fundamental / fbinc);
-	for (size_t h = 2; h <= num_harmonics; ++h)
+	auto f1 = ob[bin];
+	auto f2 = ob[bin * 2];
+	auto thd = f2;
+	for (size_t h = 3; h <= num_harmonics; ++h)
 	{
-		size_t hbin = bin * h;
+		const auto hbin = bin * h;
 		if (hbin >= fft->width() / 2)
 			break;
-		fmt::println("Harmonic {}: {:.6f} at {:.6f} Hz", h, *(ob + hbin), fbinc * hbin);
+		thd += ob[hbin];
+//		fmt::println("Harmonic {}: {:.6f} at {:.6f} Hz", h, *(ob + hbin), fbinc * hbin);
 	}
+	fmt::println("THD: {:.6f}%", 100.0 * thd / f1);
+	fmt::println("2HD: {:.6f}%", 100.0 * f2/f1);
 #endif
 }
