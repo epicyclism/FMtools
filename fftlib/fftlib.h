@@ -1,5 +1,5 @@
 ﻿//
-// Copyright (c) 2008-2022 Paul Ranson, paul@epicyclism.com
+// Copyright (c) 2008-2026 Paul Ranson, paul@epicyclism.com
 //
 // Refer to licence in repository.
 //
@@ -22,7 +22,7 @@ public:
 	virtual size_t width() = 0;
 };
 
-enum class window_t { NOWINDOW, HAMMING, BLACKMAN, BLACKMANHARRIS, KAISER5, KAISER7 };
+enum class window_t { NOWINDOW, HAMMING, BLACKMAN, BLACKMANHARRIS, KAISER5, KAISER7, HFT248D };
 
 window_t wt_from_code(char t);
 window_t wt_from_string(std::string_view t);

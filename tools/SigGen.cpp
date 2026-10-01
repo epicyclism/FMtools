@@ -75,12 +75,12 @@ int main(int argc, char* argv[])
 
 	// generate
 	if(scale)
-		FillBufferWithTriSine(f1, f2, f3, &buf[0], buf.size(), sample_rate);
+		FillBufferWithTriSineFactor(f1, f2, f3, buf.data(), buf.size(), sample_rate, F(0.5), F(0.01));
 	else
-		FillBufferWithTriSineFactor(f1, f2, f3, &buf[0], buf.size(), sample_rate, F(0.5), F(0.01));
+		FillBufferWithTriSine(f1, f2, f3, buf.data(), buf.size(), sample_rate);
 
 	// write
-	of.write ( &buf[0], buf.size () * sizeof ( F )) ;
+	of.write ( buf.data(), buf.size () * sizeof ( F )) ;
 
 	return 0;
 }

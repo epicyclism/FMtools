@@ -40,6 +40,8 @@ window_t wt_from_code(char t)
 		return window_t::KAISER5;
 	case '5':
 		return window_t::KAISER7;
+	case '6':
+		return window_t::HFT248D;
 	}
 }
 
@@ -55,6 +57,8 @@ window_t wt_from_string(std::string_view t)
 		return window_t::KAISER5;
 	if (t == "KAISER7"sv)
 		return window_t::KAISER7;
+	if (t == "HFT248D"sv)
+		return window_t::HFT248D;
 	return window_t::NOWINDOW;
 }
 
@@ -74,6 +78,8 @@ std::string_view wt_to_string(window_t wt)
 		return "Kaiser5"sv;
 	case window_t::KAISER7:
 		return "Kaiser7"sv;
+	case window_t::HFT248D:
+		return "HFT248D"sv;
 	default:
 		return "Unknown window type"sv;
 	}

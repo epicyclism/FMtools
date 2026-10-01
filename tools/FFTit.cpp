@@ -15,9 +15,10 @@
 #include <fmt/ostream.h>
 
 #include "fftlib.h"
-#include "mm_file.h"
+//#include "mm_file.h"
 #include "audio_file_reader.h"
 
+#if 0
 // if an audio file, read it, if a raw data file, map it.
 // return ptr/size pair
 //
@@ -25,6 +26,7 @@ struct signal_wrap
 {
 	mem_map_file<fp_t> mmf_;
 	std::vector<fp_t> data_;
+	int32_t sample_rate_ = -1;
 
 	signal_wrap(const char* fn)
 	{
@@ -33,6 +35,7 @@ struct signal_wrap
 		{
 			auto [data, sample_rate] = read_audio_file(fn, 0);
 			data_ = std::move(data);
+			sample_rate_ = sample_rate;
 		}
 		else
 		{
@@ -47,6 +50,7 @@ struct signal_wrap
 			return { data_.data(), data_.size() };
 	}
 };
+#endif
 
 template <typename T> void from_chars(char const* arg, T& result)
 {
@@ -76,6 +80,7 @@ void usage()
 	fmt::println(std::cerr,"              1 is Hamming and the default.");
 	fmt::println(std::cerr,"              2 is Blackman, 3 Blackman-Harris.");
 	fmt::println(std::cerr,"              4 is Kaiser5,  5 Kaiser7.");
+	fmt::println(std::cerr,"              6 is HFT248D.");
 	fmt::println(std::cerr,"And if you provide the sample rate, the centre frequencies of each bin are written to the output.");
 }
 
@@ -93,7 +98,7 @@ int main(int argc, char* argv[])
 	size_t  fftWidth = 18;
 	bool    bDB = false;
 	bool    bOnce = false;
-	size_t sample_rate = -1;
+	int32_t sample_rate = -1;
 	window_t wt = window_t::HAMMING;
 
 	int		arg = 1;
@@ -154,22 +159,15 @@ int main(int argc, char* argv[])
 		usage();
 		return -1;
 	}
-#if 0
-	mem_map_file<fp_t> mmf(argv[nInFileArg]);
-	if (!mmf)
-	{
-		fmt::println(std::cerr, "Couldn't open <{}>", argv[nInFileArg]);
-		return -1;
-	}
-#else
-	signal_wrap sw(argv[nInFileArg]);
+	signal_wrap<fp_t> sw(argv[nInFileArg]);
 	auto [ptr, len] = sw.get();
 	if(len == 0)
 	{
 		fmt::println(std::cerr, "Couldn't open <{}>", argv[nInFileArg]);
 		return -1;
 	}
-#endif
+	if (sample_rate == -1)
+		sample_rate = sw.sample_rate_;
 	// an FFT implementation!
 	auto pfft = make_fft(fftWidth, wt);
 	std::vector<fp_t> mean(pfft->width());

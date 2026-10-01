@@ -1,7 +1,7 @@
 //
 //	FFTImpl.h
 //
-// Copyright (c) 2008-2022 Paul Ranson, paul@epicyclism.com
+// Copyright (c) 2008-2026 Paul Ranson, paul@epicyclism.com
 //
 // Refer to licence in repository.
 //
@@ -96,6 +96,36 @@ public :
 	}
 } ;
 
+// flat top, see https://holometer.fnal.gov/GH_FFT.pdf
+//
+template <typename T, size_t FFTSZ> class HFT248DFn
+{
+private :
+	size_t ind_ ;
+public :
+	HFT248DFn() : ind_ ( 0 )
+	{
+	}
+	T operator () ()
+	{
+		auto z = std::numbers::pi * static_cast<T>(ind_) / static_cast<T>(FFTSZ);
+		// 1, 1.985844164102, 1.791176438506, 1.282075284005,
+		// 0.667777530266, 0.240160796576, 0.056656381764, 0.008134974479,
+		// 0.000624544650, 0.000019808998, 0.000000132974
+		T ret = static_cast<T>(1.0) + static_cast<T>(1.985844164102) * cos(static_cast<T>(1) * z) +
+			static_cast<T>(1.791176438506) * cos(static_cast<T>(2) * z) +
+			static_cast<T>(1.282075284005) * cos(static_cast<T>(3) * z) +
+			static_cast<T>(0.667777530266) * cos(static_cast<T>(4) * z) +
+			static_cast<T>(0.240160796576) * cos(static_cast<T>(5) * z) +
+			static_cast<T>(0.056656381764) * cos(static_cast<T>(6) * z) +
+			static_cast<T>(0.008134974479) * cos(static_cast<T>(7) * z) +
+			static_cast<T>(0.000624544650) * cos(static_cast<T>(8) * z) +
+			static_cast<T>(0.000019808998) * cos(static_cast<T>(9) * z) +
+			static_cast<T>(0.000000132974) * cos(static_cast<T>(10) * z);
+		++ind_ ;
+		return ret ;
+	}
+} ;
 template <typename T, size_t FFTSZ> Window<T, FFTSZ>::Window ( window_t wt )
 {
 	// build ham table
@@ -120,6 +150,9 @@ template <typename T, size_t FFTSZ> Window<T, FFTSZ>::Window ( window_t wt )
 	case window_t::KAISER7 :
 		std::generate (coeff_table_.begin(), coeff_table_.end(), KaiserFn<T, FFTSZ, 7> ()) ;
 		break ;
+	case window_t::HFT248D:
+		std::generate(coeff_table_.begin(), coeff_table_.end(), HFT248DFn<T, FFTSZ>());
+		break;
 	}
 	// calculate gain.
 	auto t = std::accumulate(coeff_table_.begin(), coeff_table_.end(), T{ 0 });
