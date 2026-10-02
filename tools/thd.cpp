@@ -71,23 +71,30 @@ int main(int ac, char** av)
 		sample_rate = sw.sample_rate_;
 	if (sample_rate == -1)
 		sample_rate = 96000; // default for raw file with nothing provided
-	fmt::println("Audio length: {}", len);
-	fmt::println("Sample rate: {}", sample_rate);
+	fmt::println("# Input file: {}", av[1]);
+	fmt::println("# Audio length: {}", len);
+	fmt::println("# Sample rate: {}", sample_rate);
 	// use an fft width greater than the sample rate. we don't need super fine resolution, just enough to get the harmonics.
 	auto fft = make_fft(clp2(sample_rate), window_t::HFT248D);
 //	auto fft = make_fft(FFT_SZ, window_t::HAMMING);
-	fmt::println("FFT width: {}", fft->width());
-#if 0
+	fmt::println("# FFT width: {}", fft->width());
+#if 1
 	int tm = 0;
 	size_t offset = 0;
-	while (offset + fft->width() < data.size())
+	std::vector<double> harmonics(100);
+	while (offset + fft->width() < len)
 	{
+		harmonics.clear();
 		auto [ob, oe] = (*fft) (ptr + offset, ptr + offset + fft->width());
-		// estimate the second harmonic by looking for the max value in the first half of the FFT output, then looking for the max value in the second half of the FFT output.
-		auto mx1 = std::max_element(ob, ob + fft->width() / 4);
-		auto mx2 = std::max_element(ob + 2 * std::distance(ob, mx1) - 10, ob + fft->width() / 2);
-//		fmt::println("{} {:.6f} {:.6f} {:.6f}", tm, 100.0 * *mx2 / *mx1, *mx1, *mx2);
-		fmt::println("{} {:.6f}", tm, 100.0 * *mx2 / *mx1);
+		const auto mx1 = std::max_element(ob, ob + fft->width() / 4);
+		const auto bin = std::distance(ob, mx1);
+		for (auto hbin = bin; hbin < fft->width() / 2; hbin += bin)
+		{
+			harmonics.push_back(ob[hbin]);
+		}
+		const auto hd2 = 100.0 * harmonics[1] / harmonics[0];
+		const auto thd = 100.0 * std::accumulate(harmonics.begin() + 1, harmonics.end(), 0.0) / harmonics[0];
+		fmt::println("{} {:.6f} {:.6f}", tm, hd2, thd);
 		offset += sample_rate;
 		++tm;
 	}
