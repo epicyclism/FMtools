@@ -38,6 +38,14 @@ template <typename T> void from_chars(char const* arg, T& result)
 	auto [ptr, ec] = std::from_chars(arg, arg + strlen(arg), result);
 }
 
+// assumes range from centre is valid....
+template<size_t N, typename T> auto max_in_range(T const* centre)
+{
+	auto begin = centre - N;
+	auto end = centre + N;
+	return *std::max_element(begin, end);
+}
+
 void usage()
 {
 	fmt::println(std::cerr, "Usage: thd <inputfile> [sample_rate]");
@@ -90,7 +98,7 @@ int main(int ac, char** av)
 		const auto bin = std::distance(ob, mx1);
 		for (auto hbin = bin; hbin < fft->width() / 2; hbin += bin)
 		{
-			harmonics.push_back(ob[hbin]);
+			harmonics.push_back(max_in_range<5>(ob + hbin));
 		}
 		const auto hd2 = 100.0 * harmonics[1] / harmonics[0];
 		const auto thd = 100.0 * std::accumulate(harmonics.begin() + 1, harmonics.end(), 0.0) / harmonics[0];
