@@ -424,6 +424,7 @@ int main(int argc, char* argv[])
 	}
 	if ( rpm == 0.0 )
 	{
+#if 0
 		auto it  = inoutbuf.begin () ;
 		auto itE = inoutbuf.end () ;
 		unsigned n = 0;
@@ -436,6 +437,10 @@ int main(int argc, char* argv[])
 				n = 0;
 			++it ;
 		}
+#else
+		fmt::println(std::cerr, "max = {}, min = {}, range = {}.", *std::max_element(inoutbuf.begin(), inoutbuf.end()), *std::min_element(inoutbuf.begin(), inoutbuf.end()), *std::max_element(inoutbuf.begin(), inoutbuf.end()) - *std::min_element(inoutbuf.begin(), inoutbuf.end()));	
+		fmt::println(std::cerr, "mean = {}, mean2 = {}.", Mean(inoutbuf.begin(), inoutbuf.end()), Mean2(inoutbuf.begin(), inoutbuf.end()));
+#endif
 	}
 	log_file_t ofdemodphase ( argv [ nOutFileArg ]) ;
 	ofdemodphase.write ( inoutbuf.data(), inoutbuf.size() * sizeof(F));
