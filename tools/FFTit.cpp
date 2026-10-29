@@ -159,7 +159,7 @@ int main(int argc, char* argv[])
 		usage();
 		return -1;
 	}
-	signal_wrap<fp_t> sw(argv[nInFileArg]);
+	signal_wrap<fp_t> sw(argv[nInFileArg], AUDIO_FILE_MONO);
 	auto [ptr, len] = sw.get();
 	if(len == 0)
 	{

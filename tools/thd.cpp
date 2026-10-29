@@ -40,9 +40,10 @@ template <typename T> void from_chars(char const* arg, T& result)
 
 void usage()
 {
-	fmt::println(std::cerr, "Usage: thd <inputfile> [sample_rate]");
+	fmt::println(std::cerr, "Usage: thd [-L|R] <inputfile> [sample_rate]");
 	fmt::println(std::cerr, "       inputfile should be an audio recording of a tone.");
 	fmt::println(std::cerr, "       ideally wav or flac. A 'raw' file coupled with a sample rate may also be used.");
+	fmt::println(std::cerr, "       -L or -R will choose the left or right channel respectively. Otherwise mono will be used.");
 }
 
 constexpr size_t FFT_SZ = 32768;
@@ -56,31 +57,61 @@ int main(int ac, char** av)
 		usage();
 		return -1;
 	}
-	if (ac > 2)
+	int afn = 1;
+	int flags = AUDIO_FILE_MONO;
+	if (av[1][0] == '-')
 	{
-		from_chars(av[2], sample_rate);
+		switch(av[1][1])
+		{
+		case 'L':
+			flags = AUDIO_FILE_LEFT;
+			afn = 2;
+			break;
+		case 'R':
+			flags = AUDIO_FILE_RIGHT;
+			afn = 2;
+			break;
+		default:
+			fmt::println(std::cerr, "Unknown option: {}", av[1]);
+			usage();
+			return -1;
+		}
 	}
-	signal_wrap<fp_t> sw(av[1]);
+	if (afn == ac)
+	{
+		fmt::println(std::cerr, "Missing input file");
+		usage();
+		return -1;
+	}
+	if (ac > afn + 1)
+	{
+		from_chars(av[afn + 1], sample_rate);
+	}
+	signal_wrap<fp_t> sw(av[afn], flags);
 	auto [ptr, len] = sw.get();
 	if (len == 0)
 	{
-		fmt::println(std::cerr, "Couldn't open <{}>", av[1]);
+		fmt::println(std::cerr, "Couldn't open <{}>", av[afn]);
 		return -1;
 	}
 	if (sample_rate == -1)
 		sample_rate = sw.sample_rate_;
 	if (sample_rate == -1)
 		sample_rate = 96000; // default for raw file with nothing provided
-	fmt::println("# Input file: {}", av[1]);
+	fmt::println("# Input file: {}", av[afn]);
 	fmt::println("# Audio length: {}", len);
 	fmt::println("# Sample rate: {}", sample_rate);
+	fmt::println("# Flags: {}", descflags[flags]);
 	// use an fft width greater than the sample rate. we don't need super fine resolution, just enough to get the harmonics.
 	auto fft = make_fft(clp2(sample_rate), window_t::HFT248D);
 //	auto fft = make_fft(FFT_SZ, window_t::HAMMING);
 	fmt::println("# FFT width: {}", fft->width());
+	fmt::println("# plot 2nd and thd with gnuplot : plot 'thd.dat' using 1:2 with lines, 'thd.dat' using 1:3 with lines");
 #if 1
 	int tm = 0;
 	size_t offset = 0;
+	double t2 = 0.0;
+	double tt = 0.0;
 	std::vector<double> harmonics(100);
 	while (offset + fft->width() < len)
 	{
@@ -95,9 +126,14 @@ int main(int ac, char** av)
 		const auto hd2 = 100.0 * harmonics[1] / harmonics[0];
 		const auto thd = 100.0 * std::accumulate(harmonics.begin() + 1, harmonics.end(), 0.0) / harmonics[0];
 		fmt::println("{} {:.6f} {:.6f}", tm, hd2, thd);
+		t2 += hd2;
+		tt += thd;
 		offset += sample_rate;
 		++tm;
 	}
+	fmt::println("# Processed {} seconds of audio", tm);
+	fmt::println("# Average 2nd harmonic distortion: {:.6f}%", t2 / tm);
+	fmt::println("# Average total harmonic distortion: {:.6f}%", tt / tm);
 #else
 	size_t offset = (len - fft->width()) / 2;
 	// just a single effort

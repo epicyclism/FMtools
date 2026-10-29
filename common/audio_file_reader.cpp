@@ -96,15 +96,15 @@ std::pair<std::vector<F>, uint32_t> read_audio_file(const char* filename, uint32
     {
         switch (flags)
         {
-        case 0:
+        case AUDIO_FILE_MONO:
             // make mono
             monoize(buf);
             break;
-        case 1:
+        case AUDIO_FILE_LEFT:
             // keep left
             keep_left(buf);
             break;
-        case 2:
+        case AUDIO_FILE_RIGHT:
             // keep right
             keep_right(buf);
             break;
@@ -117,4 +117,26 @@ std::pair<std::vector<F>, uint32_t> read_audio_file(const char* filename, uint32
     sr = decoder.outputSampleRate;
     ma_decoder_uninit(&decoder);
     return { buf, sr };
+}
+
+std::pair<std::vector<F>, uint32_t> read_raw_file(const char* filename, uint32_t flags)
+{
+    std::vector<F> buf;
+    mem_map_file<F> mmf(filename);
+    if (!mmf)
+        return { buf, MA_INVALID_FILE };
+    buf = std::vector<F>(mmf.ptr(), mmf.ptr() + mmf.length());
+    switch (flags)
+    {
+    case AUDIO_FILE_MONO:
+        // do nothing, we don't know if it's mono or not, but we can treat it as mono
+        break;
+    case AUDIO_FILE_LEFT:
+        keep_left(buf);
+        break;
+    case AUDIO_FILE_RIGHT:
+        keep_right(buf);
+        break;
+    }
+    return { buf, 0 };
 }
