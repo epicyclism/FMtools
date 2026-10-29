@@ -73,20 +73,21 @@ double time_to_radius(double tm, radial_params const& rp)
 {
 	if(rp.inner == 0.0 && rp.outer == 1.0 && rp.duration == 1.0)
 		return tm;
-	return rp.inner + (rp.outer - rp.inner) * (tm / rp.duration);
+//	return rp.inner + (rp.outer - rp.inner) * (tm / rp.duration);
+	return rp.outer - (rp.outer - rp.inner) * (tm / rp.duration);
 }
 
 void usage()
 {
-	fmt::println(std::cerr, "Usage: thd [-L|R] <inputfile> [sample_rate] [inner,outer,duration]");
+	fmt::println(std::cerr, "Usage: thd [-L|R] [-Dinner,outer,duration] <inputfile> [sample_rate]");
 	fmt::println(std::cerr, "       inputfile should be an audio recording of a tone.");
 	fmt::println(std::cerr, "       ideally wav or flac. A 'raw' file coupled with a sample rate may also be used.");
 	fmt::println(std::cerr, "       -L or -R will choose the left or right channel respectively. Otherwise mono will be used.");
 	fmt::println(std::cerr, "       inner,outer,duration are optional parameters for converting the output to a radius,");
 	fmt::println(std::cerr, "       where inner and outer define the radial limits and duration defines the time window.");
 	fmt::println(std::cerr, "       Consider a test recording where we want THD at distance, rather than time");
-	fmt::println(std::cerr, "       eg, ./thd ./data/sperling_45.wav 57.5,145.0,965.0 > sperling_45_thd.dat");
-	fmt::println(std::cerr, "        or ./thd ./data/sperling_33.wav 57.5,145.0,1337.0 > sperling_33_thd.dat");
+	fmt::println(std::cerr, "       eg, ./thd -D57.5,145.0,965.0 ./data/sperling_45.wav > sperling_45_thd.dat");
+	fmt::println(std::cerr, "        or ./thd -L -D57.5,145.0,1337.0 ./data/sperling_33.wav > sperling_33_thd.dat");
 }
 
 constexpr size_t FFT_SZ = 32768;
@@ -101,58 +102,51 @@ int main(int ac, char** av)
 		usage();
 		return -1;
 	}
-	int afn = 1;
 	int flags = AUDIO_FILE_MONO;
-	if (av[1][0] == '-')
+	int arg = 1;
+	while (arg < ac && av[arg][0] == '-')
 	{
-		switch(av[1][1])
+		switch(av[arg][1])
 		{
 		case 'L':
+		case 'l':
 			flags = AUDIO_FILE_LEFT;
-			afn = 2;
 			break;
 		case 'R':
+		case 'r':
 			flags = AUDIO_FILE_RIGHT;
-			afn = 2;
+			break;
+		case 'D':
+		case 'd':
+			rp = parse_radial_params(av[arg] + 2); // skip "-D"
 			break;
 		default:
 			fmt::println(std::cerr, "Unknown option: {}", av[1]);
 			usage();
 			return -1;
 		}
+		++arg;
 	}
-	if (afn == ac)
+	if (arg == ac)
 	{
 		fmt::println(std::cerr, "Missing input file");
 		usage();
 		return -1;
 	}
-	if (ac > afn + 1)
-	{
-		fmt::println(std::cerr, "Missing input file");
-		usage();
-		return -1;
-	}
-	if (ac > afn + 1)
-	{
-		rp = parse_radial_params(av[afn + 1]);
-		if (rp.inner == 0.0 && rp.outer == 1.0 && rp.duration == 1.0)
-			from_chars(av[afn + 1], sample_rate);
-	}
-	if (ac > afn + 2)
-		rp = parse_radial_params(av[afn + 2]);
-	signal_wrap<fp_t> sw(av[afn], flags);
+	if (ac > arg + 1)
+		from_chars(av[arg + 1], sample_rate);
+	signal_wrap<fp_t> sw(av[arg], flags);
 	auto [ptr, len] = sw.get();
 	if (len == 0)
 	{
-		fmt::println(std::cerr, "Couldn't open <{}>", av[afn]);
+		fmt::println(std::cerr, "Couldn't open <{}>", av[arg]);
 		return -1;
 	}
 	if (sample_rate == -1)
 		sample_rate = sw.sample_rate_;
 	if (sample_rate == -1)
 		sample_rate = 96000; // default for raw file with nothing provided
-	fmt::println("# Input file: {}", av[afn]);
+	fmt::println("# Input file: {}", av[arg]);
 	fmt::println("# Audio length: {}", len);
 	fmt::println("# Sample rate: {}", sample_rate);
 	fmt::println("# Flags: {}", descflags[flags]);
