@@ -38,12 +38,55 @@ template <typename T> void from_chars(char const* arg, T& result)
 	auto [ptr, ec] = std::from_chars(arg, arg + strlen(arg), result);
 }
 
+// assumes range from centre is valid....
+template<size_t N, typename T> auto max_in_range(T const* centre)
+{
+	auto begin = centre - N;
+	auto end = centre + N;
+	return *std::max_element(begin, end);
+}
+
+struct radial_params
+{
+	double inner = 0.0;
+	double outer = 1.0;
+	double duration = 1.0;
+};
+
+radial_params parse_radial_params(char const* arg)
+{
+	radial_params rp;
+	std::string_view sv(arg);
+	auto first = sv.find(',');
+	if (first == std::string_view::npos)
+		return rp;
+	auto second = sv.find(',', first + 1);
+	if (second == std::string_view::npos)
+		return rp;
+	from_chars(sv.data(), rp.inner);
+	from_chars(sv.data() + first + 1, rp.outer);
+	from_chars(sv.data() + second + 1, rp.duration);
+	return rp;
+}
+
+double time_to_radius(double tm, radial_params const& rp)
+{
+	if(rp.inner == 0.0 && rp.outer == 1.0 && rp.duration == 1.0)
+		return tm;
+	return rp.inner + (rp.outer - rp.inner) * (tm / rp.duration);
+}
+
 void usage()
 {
-	fmt::println(std::cerr, "Usage: thd [-L|R] <inputfile> [sample_rate]");
+	fmt::println(std::cerr, "Usage: thd [-L|R] <inputfile> [sample_rate] [inner,outer,duration]");
 	fmt::println(std::cerr, "       inputfile should be an audio recording of a tone.");
 	fmt::println(std::cerr, "       ideally wav or flac. A 'raw' file coupled with a sample rate may also be used.");
 	fmt::println(std::cerr, "       -L or -R will choose the left or right channel respectively. Otherwise mono will be used.");
+	fmt::println(std::cerr, "       inner,outer,duration are optional parameters for converting the output to a radius,");
+	fmt::println(std::cerr, "       where inner and outer define the radial limits and duration defines the time window.");
+	fmt::println(std::cerr, "       Consider a test recording where we want THD at distance, rather than time");
+	fmt::println(std::cerr, "       eg, ./thd ./data/sperling_45.wav 57.5,145.0,965.0 > sperling_45_thd.dat");
+	fmt::println(std::cerr, "        or ./thd ./data/sperling_33.wav 57.5,145.0,1337.0 > sperling_33_thd.dat");
 }
 
 constexpr size_t FFT_SZ = 32768;
@@ -51,6 +94,7 @@ constexpr size_t FFT_SZ = 32768;
 int main(int ac, char** av)
 {
 	int32_t sample_rate = -1;
+	radial_params rp;
 
 	if (ac < 2)
 	{
@@ -85,8 +129,18 @@ int main(int ac, char** av)
 	}
 	if (ac > afn + 1)
 	{
-		from_chars(av[afn + 1], sample_rate);
+		fmt::println(std::cerr, "Missing input file");
+		usage();
+		return -1;
 	}
+	if (ac > afn + 1)
+	{
+		rp = parse_radial_params(av[afn + 1]);
+		if (rp.inner == 0.0 && rp.outer == 1.0 && rp.duration == 1.0)
+			from_chars(av[afn + 1], sample_rate);
+	}
+	if (ac > afn + 2)
+		rp = parse_radial_params(av[afn + 2]);
 	signal_wrap<fp_t> sw(av[afn], flags);
 	auto [ptr, len] = sw.get();
 	if (len == 0)
@@ -102,6 +156,8 @@ int main(int ac, char** av)
 	fmt::println("# Audio length: {}", len);
 	fmt::println("# Sample rate: {}", sample_rate);
 	fmt::println("# Flags: {}", descflags[flags]);
+	if (rp.inner != 0.0 || rp.outer != 1.0 || rp.duration != 1.0)
+		fmt::println("# Radial parameters: inner = {}, outer = {}, duration = {}", rp.inner, rp.outer, rp.duration);
 	// use an fft width greater than the sample rate. we don't need super fine resolution, just enough to get the harmonics.
 	auto fft = make_fft(clp2(sample_rate), window_t::HFT248D);
 //	auto fft = make_fft(FFT_SZ, window_t::HAMMING);
@@ -121,11 +177,11 @@ int main(int ac, char** av)
 		const auto bin = std::distance(ob, mx1);
 		for (auto hbin = bin; hbin < fft->width() / 2; hbin += bin)
 		{
-			harmonics.push_back(ob[hbin]);
+			harmonics.push_back(max_in_range<5>(ob + hbin));
 		}
 		const auto hd2 = 100.0 * harmonics[1] / harmonics[0];
 		const auto thd = 100.0 * std::accumulate(harmonics.begin() + 1, harmonics.end(), 0.0) / harmonics[0];
-		fmt::println("{} {:.6f} {:.6f}", tm, hd2, thd);
+		fmt::println("{} {:.6f} {:.6f}", time_to_radius(tm, rp), hd2, thd);
 		t2 += hd2;
 		tt += thd;
 		offset += sample_rate;
