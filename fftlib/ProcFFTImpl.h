@@ -29,7 +29,7 @@ ProcessorFFT<T, FFTSZ>::~ProcessorFFT ()
 }
 
 template <typename T, size_t FFTSZ>
-std::pair<T const*, T const*> ProcessorFFT<T, FFTSZ>::operator () ( T const* ib, T const* ie )
+std::pair<T const*, T const*> ProcessorFFT<T, FFTSZ>::simple ( T const* ib, T const* ie )
 {
 	window_ ( ib, ie, wsp1_.begin() ) ;
 	PrepareFFT () ;
@@ -39,4 +39,18 @@ std::pair<T const*, T const*> ProcessorFFT<T, FFTSZ>::operator () ( T const* ib,
 	std::transform(fftout_.begin(), fftout_.begin() + FFTSZ / 2, wsp1_.begin(), [factor = window_.Gain()](auto t) { return std::abs<T>(t) * T { 2.0 } * factor / FFTSZ; });
 	
 	return std::make_pair(wsp1_.data(), wsp1_.data() + FFTSZ / 2);
+}
+
+
+template <typename T, size_t FFTSZ>
+std::pair<std::complex<T> const*, std::complex<T> const*> ProcessorFFT<T, FFTSZ>::cmplx ( T const* ib, T const* ie )
+{
+	window_ ( ib, ie, wsp1_.begin() ) ;
+	PrepareFFT () ;
+	fft_ ( fftin_.data(), fftout_.data());
+	// taking the magnitude of each FFT output point
+	// put the magnmitude into the real , and the phase into the imaginary
+	std::transform(fftout_.begin(), fftout_.begin() + FFTSZ / 2, fftout_.begin(), [factor = window_.Gain()](auto t) { return std::complex<T>{std::abs<T>(t) * T { 2.0 } * factor / FFTSZ, std::arg(t) }; });
+
+	return std::make_pair(fftout_.data(), fftout_.data() + FFTSZ / 2);
 }

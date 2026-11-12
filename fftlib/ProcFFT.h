@@ -28,7 +28,8 @@ private :
 public :
 	ProcessorFFT ( window_t wt = window_t::HAMMING ) ;
 	virtual ~ProcessorFFT ();
-	virtual std::pair<T const*, T const*> operator () ( T const* ib, T const* ie );
+	virtual std::pair<T const*, T const*> simple ( T const* ib, T const* ie );
+	virtual std::pair<std::complex<T> const*, std::complex<T> const*> cmplx  ( T const* ib, T const* ie );
 	virtual size_t width () final { return FFTSZ ; } 
 } ;
 

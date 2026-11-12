@@ -18,7 +18,8 @@ struct IProcessorFFT
 {
 public:
 	virtual ~IProcessorFFT() {};
-	virtual std::pair<fp_t const*, fp_t const*> operator () (fp_t const* ib, fp_t const* ie) = 0;
+	virtual std::pair<fp_t const*, fp_t const*> simple (fp_t const* ib, fp_t const* ie) = 0;
+	virtual std::pair<std::complex<fp_t> const*, std::complex<fp_t> const*> cmplx (fp_t const* ib, fp_t const* ie) = 0;
 	virtual size_t width() = 0;
 };
 

@@ -24,7 +24,7 @@ void FFTTest ()
 		for ( int f = 1; f < 8193; f *= 2 )
 		{
 			FillBufferWithSine ( F(f + 1), &buf [ 0 ], buf.size (), 32768 ) ;
-			auto[b, e] = pFFT->operator()(buf.data(), buf.data() + buf.size()) ;
+			auto[b, e] = pFFT->simple(buf.data(), buf.data() + buf.size()) ;
 			auto mit = std::max_element ( b, e) ;
 
 			fmt::println("f = {}, max = {}, at bucket {}, freq {}", f, *mit, std::distance ( b, mit ), F(F(32768) * std::distance ( b, mit ) / pFFT->width ())) ;

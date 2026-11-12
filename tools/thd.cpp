@@ -157,7 +157,7 @@ int main(int ac, char** av)
 //	auto fft = make_fft(FFT_SZ, window_t::HAMMING);
 	fmt::println("# FFT width: {}", fft->width());
 	fmt::println("# plot 2nd and thd with gnuplot : plot 'thd.dat' using 1:2 with lines, 'thd.dat' using 1:3 with lines");
-#if 1
+
 	int tm = 0;
 	size_t offset = 0;
 	double t2 = 0.0;
@@ -166,7 +166,7 @@ int main(int ac, char** av)
 	while (offset + fft->width() < len)
 	{
 		harmonics.clear();
-		auto [ob, oe] = (*fft) (ptr + offset, ptr + offset + fft->width());
+		auto [ob, oe] = (*fft).simple(ptr + offset, ptr + offset + fft->width());
 		const auto mx1 = std::max_element(ob, ob + fft->width() / 4);
 		const auto bin = std::distance(ob, mx1);
 		for (auto hbin = bin; hbin < fft->width() / 2; hbin += bin)
@@ -184,48 +184,4 @@ int main(int ac, char** av)
 	fmt::println("# Processed {} seconds of audio", tm);
 	fmt::println("# Average 2nd harmonic distortion: {:.6f}%", t2 / tm);
 	fmt::println("# Average total harmonic distortion: {:.6f}%", tt / tm);
-#else
-	size_t offset = (len - fft->width()) / 2;
-	// just a single effort
-	auto [ob, oe] = (*fft) (ptr + offset, ptr + offset + fft->width());
-	double fbinc = double(sample_rate) / fft->width();
-//	double fb = -fbinc / 2.0;
-	double fb = 0.0;
-	auto mxe = std::max_element(ob, ob + fft->width() / 2);
-	const auto bin = std::distance(ob, mxe);
-	const auto fundamental = bin * fbinc;
-#if 0
-	fmt::println("Max value: {:.6f} at {:.6f} Hz", *mxe, fundamental);
-	auto oee = ob + fft->width() / 2;
-	auto obb = ob;
-	while (obb < oee)
-	{
-		if(fb > 998 && fb < 1003)
-			fmt::println("{:.6f} {:.6f}", fb, *obb);
-		if(fb > 1998 && fb < 2003)
-			fmt::println("{:.6f} {:.6f}", fb, *ob);
-		if(fb > 2998 && fb < 3003)
-			fmt::println("{:.6f} {:.6f}", fb, *obb);
-		if(fb > 3998 && fb < 4003)
-			fmt::println("{:.6f} {:.6f}", fb, *obb);
-		fb += fbinc;
-		++obb;
-	}
-#endif
-	// compute the thd 
-	int num_harmonics = (sample_rate / 2) / fundamental;
-	auto f1 = ob[bin];
-	auto f2 = ob[bin * 2];
-	auto thd = f2;
-	for (size_t h = 3; h <= num_harmonics; ++h)
-	{
-		const auto hbin = bin * h;
-		if (hbin >= fft->width() / 2)
-			break;
-		thd += ob[hbin];
-//		fmt::println("Harmonic {}: {:.6f} at {:.6f} Hz", h, *(ob + hbin), fbinc * hbin);
-	}
-	fmt::println("THD: {:.6f}%", 100.0 * thd / f1);
-	fmt::println("2HD: {:.6f}%", 100.0 * f2/f1);
-#endif
 }

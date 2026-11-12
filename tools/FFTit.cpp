@@ -184,7 +184,7 @@ int main(int argc, char* argv[])
 		}
 		size_t offset = (len - pfft->width()) / 2;
 		// just a single effort
-		auto[ob, oe] = (*pfft) (ptr + offset, ptr + offset + pfft->width());
+		auto[ob, oe] = (*pfft).simple(ptr + offset, ptr + offset + pfft->width());
 		std::copy(ob, oe, mean.begin());
 	}
 	else
@@ -207,7 +207,7 @@ int main(int argc, char* argv[])
 
 		for (size_t n = 0; n < nffts; ++n)
 		{
-			auto[ob, oe] = (*pfft) (ptr + n * pfft->width() / 2, ptr + n * pfft->width() / 2 + pfft->width());
+			auto[ob, oe] = (*pfft).simple(ptr + n * pfft->width() / 2, ptr + n * pfft->width() / 2 + pfft->width());
 			// add to average
 			std::transform(mean.begin(), mean.end(), ob, mean.begin(), std::plus<>());
 		}
