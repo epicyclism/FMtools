@@ -50,7 +50,7 @@ std::pair<std::complex<T> const*, std::complex<T> const*> ProcessorFFT<T, FFTSZ>
 	fft_ ( fftin_.data(), fftout_.data());
 	// taking the magnitude of each FFT output point
 	// put the magnmitude into the real , and the phase into the imaginary
-	std::transform(fftout_.begin(), fftout_.begin() + FFTSZ / 2, fftout_.begin(), [factor = window_.Gain()](auto t) { return std::complex<T>{std::abs<T>(t) * T { 2.0 } * factor / FFTSZ, std::arg(t) }; });
+	std::transform(fftout_.begin(), fftout_.begin() + FFTSZ / 2, fftout_.begin(), [factor = window_.Gain()](auto t) { return std::complex<T>{std::abs<T>(t) * T { 2.0 } * factor / FFTSZ, t.imag() }; });
 
 	return std::make_pair(fftout_.data(), fftout_.data() + FFTSZ / 2);
 }

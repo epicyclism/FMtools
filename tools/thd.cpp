@@ -9,6 +9,7 @@
 #include <cmath>
 #include <algorithm>
 #include <numeric>
+#include <ranges>
 #include <charconv>
 
 #include <fmt/format.h>
@@ -43,7 +44,7 @@ template<size_t N, typename T> auto max_in_range(T const* centre)
 {
 	auto begin = centre - N;
 	auto end = centre + N;
-	return *std::max_element(begin, end);
+	return *std::max_element(begin, end, [](auto& l, auto& r) { return l.real() < r.real(); });
 }
 
 struct radial_params
@@ -156,26 +157,32 @@ int main(int ac, char** av)
 	auto fft = make_fft(clp2(sample_rate), window_t::HFT248D);
 //	auto fft = make_fft(FFT_SZ, window_t::HAMMING);
 	fmt::println("# FFT width: {}", fft->width());
-	fmt::println("# plot 2nd and thd with gnuplot : plot 'thd.dat' using 1:2 with lines, 'thd.dat' using 1:3 with lines");
+	fmt::println("# plot 2nd and thd with gnuplot : plot 'thd.dat' using 1:3 with lines, 'thd.dat' using 1:4 with lines");
+	fmt::println("# time 2hd 2hd_phase thd");
 
 	int tm = 0;
 	size_t offset = 0;
 	double t2 = 0.0;
 	double tt = 0.0;
 	std::vector<double> harmonics(100);
+	std::vector<double> phase(100);
 	while (offset + fft->width() < len)
 	{
 		harmonics.clear();
-		auto [ob, oe] = (*fft).simple(ptr + offset, ptr + offset + fft->width());
-		const auto mx1 = std::max_element(ob, ob + fft->width() / 4);
+		phase.clear();
+
+		auto [ob, oe] = (*fft).cmplx(ptr + offset, ptr + offset + fft->width());
+		const auto mx1 = std::max_element(ob, ob + fft->width() / 4, [](auto &l, auto &r) { return l.real() < r.real(); });
 		const auto bin = std::distance(ob, mx1);
 		for (auto hbin = bin; hbin < fft->width() / 2; hbin += bin)
 		{
-			harmonics.push_back(max_in_range<5>(ob + hbin));
+			auto h = max_in_range<5>(ob + hbin);
+			harmonics.push_back(h.real());
+			phase.push_back(h.imag());
 		}
 		const auto hd2 = 100.0 * harmonics[1] / harmonics[0];
 		const auto thd = 100.0 * std::accumulate(harmonics.begin() + 1, harmonics.end(), 0.0) / harmonics[0];
-		fmt::println("{} {:.6f} {:.6f}", time_to_radius(tm, rp), hd2, thd);
+		fmt::println("{} {:.6f} {:.6f} {:.6f}", time_to_radius(tm, rp), hd2, phase[1], thd);
 		t2 += hd2;
 		tt += thd;
 		offset += sample_rate;
