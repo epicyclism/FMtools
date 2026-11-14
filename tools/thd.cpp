@@ -157,7 +157,7 @@ int main(int ac, char** av)
 	auto fft = make_fft(clp2(sample_rate), window_t::HFT248D);
 //	auto fft = make_fft(FFT_SZ, window_t::HAMMING);
 	fmt::println("# FFT width: {}", fft->width());
-	fmt::println("# plot 2nd and thd with gnuplot : plot 'thd.dat' using 1:3 with lines, 'thd.dat' using 1:4 with lines");
+	fmt::println("# plot 2nd and thd with gnuplot : plot 'thd.dat' using 1:2 with lines smooth acsplines, 'thd.dat' using 1:4 with lines smooth acsplines");
 	fmt::println("# time 2hd 2hd_phase thd");
 
 	int tm = 0;
