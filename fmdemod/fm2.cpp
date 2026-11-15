@@ -44,9 +44,18 @@ void fm_process(std::vector<F> const& audio_buf, int32_t sample_rate, double rpm
     auto zero_crossings = collect_zero_crossings(audio_buf);
     fmt::println(std::cerr, "Found {} zero crossings in audio buffer.", zero_crossings.size());
     auto average_interval = std::accumulate(zero_crossings.begin(), zero_crossings.end(), 0.0) / zero_crossings.size();
+    auto low_interval = average_interval * 0.9;
+    auto high_interval = average_interval * 1.1;
+    size_t count = 0;
+    average_interval = std::accumulate(zero_crossings.begin(), zero_crossings.end(), 0.0, [low_interval, high_interval, &count](double acc, double val) {
+        if (val >= low_interval && val <= high_interval) {
+            ++count;
+            return acc + val;
+        }
+        return acc;
+    }) / count ;
     auto frequency = zero_crossing_frequency(average_interval, sample_rate);
-    fmt::println(std::cerr, "Average zero crossing interval: {} samples, frequency: {:.2f} Hz", average_interval, frequency);
-
+    fmt::println(std::cerr, "valid zero crossing count: {}, frequency: {:.2f} Hz", count, frequency);
 }
 
 int main ( int argc, char **argv )
