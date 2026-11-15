@@ -250,15 +250,15 @@ void CreateJTestF(std::vector<F>& buf)
 		{
 		case 0:
 		case 1:
-			buf[s] = F((int32_t)0xc0000000)/0x7fffffff;
+			buf[s] = F((int32_t)0xc0000000)/F(0x7fffffff);
 			++state;
 			break;
 		case 2:
-			buf[s] =F((int32_t)0x40000000)/0x7fffffff;
+			buf[s] =F((int32_t)0x40000000)/F(0x7fffffff);
 			++state;
 			break;
 		case 3:
-			buf[s] = F((int32_t)0x40000000)/0x7fffffff;
+			buf[s] = F((int32_t)0x40000000)/F(0x7fffffff);
 			++cnt;
 			state = 0;
 			if (cnt == 24)
@@ -269,15 +269,15 @@ void CreateJTestF(std::vector<F>& buf)
 			break;
 		case 4:
 		case 5:
-			buf[s] = F((int32_t)0xbfffff00)/0x7fffffff;
+			buf[s] = F((int32_t)0xbfffff00)/F(0x7fffffff);
 			++state;
 			break;
 		case 6:
-			buf[s] = F((int32_t)0x3fffff00)/0x7fffffff;
+			buf[s] = F((int32_t)0x3fffff00)/F(0x7fffffff);
 			++state;
 			break;
 		case 7:
-			buf[s] = F((int32_t)0x3fffff00)/0x7fffffff;
+			buf[s] = F((int32_t)0x3fffff00)/F(0x7fffffff);
 			++cnt;
 			state = 4;
 			if (cnt == 24)
@@ -300,15 +300,15 @@ void CreateQTestF(std::vector<F>& buf)
 		{
 		case 0:
 		case 1:
-			buf[s] = F((int32_t)0xc0000000) / 0x7fffffff;
+			buf[s] = F((int32_t)0xc0000000) / F(0x7fffffff);
 			++state;
 			break;
 		case 2:
-			buf[s] = F((int32_t)0x40000000) / 0x7fffffff;
+			buf[s] = F((int32_t)0x40000000) / F(0x7fffffff);
 			++state;
 			break;
 		case 3:
-			buf[s] = F((int32_t)0x40000000) / 0x7fffffff;
+			buf[s] = F((int32_t)0x40000000) / F(0x7fffffff);
 			state = 0;
 			break;
 		}
@@ -363,19 +363,19 @@ void CreateKTestF(std::vector<F>& buf, int sublen)
 			switch (state_)
 			{
 			case 0:
-				f =  F((int32_t)0xc0000000) / 0x7fffffff;
+				f =  F((int32_t)0xc0000000) / F(0x7fffffff);
 				++state_;
 				break;
 			case 1:
-				f =  F((int32_t)0xc0000000) / 0x7fffffff;
+				f =  F((int32_t)0xc0000000) / F(0x7fffffff);
 				++state_;
 				break;
 			case 2:
-				f = F((int32_t)0x40000000) / 0x7fffffff;
+				f = F((int32_t)0x40000000) / F(0x7fffffff);
 				++state_;
 				break;
 			case 3:
-				f = F((int32_t)0x40000000) / 0x7fffffff;
+				f = F((int32_t)0x40000000) / F(0x7fffffff);
 				state_ = 0;
 				break;
 			}
@@ -397,7 +397,7 @@ void CreateKTestF(std::vector<F>& buf, int sublen)
 			++state_;
 			if (state_ < len_ / 2)
 			{
-				f  = F((int32_t)0x00000100) / 0x7fffffff;
+				f  = F((int32_t)0x00000100) / F(0x7fffffff);
 			}
 			else
 			{

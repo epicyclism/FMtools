@@ -12,3 +12,5 @@ using F = float;
 constexpr F TWO = 2.0;
 constexpr F TWO_PI  = std::numbers::pi * 2.0 ;
 constexpr F PI_FOUR = std::numbers::pi / 4.0;
+
+constexpr F thirty_three = 100.0 / 3.0;
