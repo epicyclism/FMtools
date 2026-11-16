@@ -3,7 +3,6 @@
 
 #include <vector>
 #include <charconv>	
-#include <cmath>
 #include <complex>
 #include <algorithm>
 #include <functional>

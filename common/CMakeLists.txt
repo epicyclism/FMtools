@@ -15,6 +15,8 @@ set(common_src
     wav_file.h
     audio_file_reader.h
     audio_file_reader.cpp
+    fm2_proc.h
+    fm2_proc.cpp
 )
 
 add_library (common STATIC ${common_src})

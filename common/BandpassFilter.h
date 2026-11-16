@@ -15,6 +15,7 @@
 //
 #pragma once
 
+#include <cmath>
 #include "constants.h"
 
 template< size_t K, size_t W, typename F > struct BandPassFilter

@@ -6,6 +6,8 @@
 
 #include <vector>
 
+#include "constants.h"
+
 // assumes values cross 0, good assumption for this application.
 //
 template<typename I> I find_next_opposite_sign(I b, I e)
@@ -56,9 +58,9 @@ template<typename I> std::vector<F> collect_zero_crossings(I b, I e)
     return result;
 }
 
-inline std::vector<F> collect_zero_crossings(std::vector<F> const& audio_buf)
+inline std::vector<F> collect_zero_crossings(std::vector<F> const& buf)
 {
-    return collect_zero_crossings(audio_buf.begin(), audio_buf.end());
+    return collect_zero_crossings(buf.begin(), buf.end());
 }
 
 // the frequency implied by a zero crossing interval, in Hz

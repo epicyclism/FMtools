@@ -20,9 +20,7 @@
 #include "mm_file.h"
 #include "basic_file.h"
 #include "audio_file_reader.h"
-#include "FMDemodFunctions.h"
-
-#include "zero_crossing.h"
+#include "fm2_proc.h"
 
 void welcome ()
 {
@@ -35,27 +33,6 @@ void Usage ()
 	fmt::println(std::cerr, "Usage : fm2 [-L|R|M] <inputwav>") ;
 	fmt::println(std::cerr, "Options : -L, use left. -R, use right. -M, convert to mono.") ;
 	fmt::println(std::cerr, "          (These are all ignored if the input is mono...)") ;
-}
-
-// move this to a library function later
-void fm_process(std::vector<F> const& audio_buf, int32_t sample_rate, double rpm)
-{
-    // zerp crossing detection
-    auto zero_crossings = collect_zero_crossings(audio_buf);
-    fmt::println(std::cerr, "Found {} zero crossings in audio buffer.", zero_crossings.size());
-    auto average_interval = std::accumulate(zero_crossings.begin(), zero_crossings.end(), 0.0) / zero_crossings.size();
-    auto low_interval = average_interval * 0.9;
-    auto high_interval = average_interval * 1.1;
-    size_t count = 0;
-    average_interval = std::accumulate(zero_crossings.begin(), zero_crossings.end(), 0.0, [low_interval, high_interval, &count](double acc, double val) {
-        if (val >= low_interval && val <= high_interval) {
-            ++count;
-            return acc + val;
-        }
-        return acc;
-    }) / count ;
-    auto frequency = zero_crossing_frequency(average_interval, sample_rate);
-    fmt::println(std::cerr, "valid zero crossing count: {}, frequency: {:.2f} Hz", count, frequency);
 }
 
 int main ( int argc, char **argv )
@@ -112,7 +89,12 @@ int main ( int argc, char **argv )
 		fmt::println(std::cerr, "Failed to read audio file <{}>, error code {}", argv[arg], sample_rate);
 		return -1;
 	}
-    fmt::println(std::cerr, "Read {} samples from input file. Sample rate is {}.", audio_buf.size (), sample_rate) ;
+    fmt::println("Read {} samples from input file. Sample rate is {}.", audio_buf.size (), sample_rate) ;
 
-    fm_process(audio_buf, sample_rate, rpm) ;
+    fm2_proc_cfg cfg;
+    cfg.sample_rate = sample_rate;
+    cfg.rpm = rpm;
+    fm2_proc proc;
+    proc.process(cfg, audio_buf);
+    fmt::println("Frequency detected: {} Hz", proc.frequency_);
 }
