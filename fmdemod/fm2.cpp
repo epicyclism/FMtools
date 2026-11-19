@@ -32,7 +32,7 @@ void Usage ()
 {
 	fmt::println(std::cerr, "Usage : fm2 [-L|R|M] <inputwav>") ;
 	fmt::println(std::cerr, "Options : -L, use left. -R, use right. -M, convert to mono.") ;
-	fmt::println(std::cerr, "          (These are all ignored if the input is mono...)") ;
+	fmt::println(std::cerr, "          (These are all ignored if the input is already mono...)") ;
 }
 
 int main ( int argc, char **argv )
@@ -92,9 +92,17 @@ int main ( int argc, char **argv )
     fmt::println("Read {} samples from input file. Sample rate is {}.", audio_buf.size (), sample_rate) ;
 
     fm2_proc_cfg cfg;
-    cfg.sample_rate = sample_rate;
-    cfg.rpm = rpm;
+    cfg.sample_rate_ = sample_rate;
+    cfg.rpm_ = rpm;
+    cfg.filter_ = false;
+    cfg.polar_ = true;
     fm2_proc proc;
+    if(!proc.sufficient_data(audio_buf))
+    {
+        fmt::println(std::cerr, "Insufficient data for processing. Need more samples.");
+        return -1;
+    }
     proc.process(cfg, audio_buf);
     fmt::println("Frequency detected: {} Hz", proc.frequency_);
+    fmt::println("mean = {}, min = {}, max = {}", mean(proc.buf_.begin(), proc.buf_.end()), *std::min_element(proc.buf_.begin(), proc.buf_.end()), *std::max_element(proc.buf_.begin(), proc.buf_.end()));
 }
